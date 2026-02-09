@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.cursor/
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Lean build artifacts
+lean/.lake/
+lean/lake-packages/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets — never commit
+config.json
+.env
+lean/temp/
