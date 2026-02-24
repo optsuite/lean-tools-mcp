@@ -295,15 +295,6 @@ lake build havelet_generator
 lake build decl_exporter
 lake build definition_tool
 ```
-
-If network access requires a proxy:
-
-```bash
-export https_proxy=http://127.0.0.1:7897
-export http_proxy=http://127.0.0.1:7897
-lake update && lake build
-```
-
 ## License
 
 MIT
