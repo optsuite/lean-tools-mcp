@@ -6,7 +6,7 @@ No Lean dependency — tests tool definitions and routing.
 
 from __future__ import annotations
 
-from lean_tools_mcp.server import TOOLS, _dispatch_tool
+from lean_tools_mcp.server import TOOLS
 
 
 class TestToolRegistry:
@@ -61,7 +61,6 @@ class TestToolRegistry:
                 f"{tool.name} missing 'required' in schema"
             )
 
-    # Tools that don't use file_path (they have alternative primary inputs)
     TOOLS_WITHOUT_FILE_PATH = {
         "lean_run_code", "lean_leansearch", "lean_loogle", "lean_leanfinder",
         "lean_unified_search", "lean_llm_query", "lean_export_decls",
@@ -82,3 +81,11 @@ class TestToolRegistry:
             assert len(tool.description) > 10, (
                 f"{tool.name} description too short: {tool.description!r}"
             )
+
+    def test_multi_attempt_accepts_tactics(self):
+        """lean_multi_attempt must accept 'tactics' in its schema."""
+        tool = next(t for t in TOOLS if t.name == "lean_multi_attempt")
+        props = tool.inputSchema["properties"]
+        assert "tactics" in props, "lean_multi_attempt missing 'tactics' property"
+        assert "column" in props, "lean_multi_attempt missing 'column' property"
+        assert "tactics" in tool.inputSchema["required"]

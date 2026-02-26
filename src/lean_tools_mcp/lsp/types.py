@@ -190,3 +190,32 @@ class FileProgressProcessingInfo:
             range=Range.from_dict(d["range"]),
             kind=FileProgressKind(d.get("kind", 1)),
         )
+
+
+# ---------------------------------------------------------------------------
+# $/lean/tryTactics response
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class TacticResult:
+    """Result for a single tactic attempt from $/lean/tryTactics."""
+
+    tactic: str
+    goals: list[str] | None = None
+    error: str | None = None
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> TacticResult:
+        return cls(
+            tactic=d.get("tactic", ""),
+            goals=d.get("goals"),
+            error=d.get("error"),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        d: dict[str, Any] = {"tactic": self.tactic}
+        if self.goals is not None:
+            d["goals"] = self.goals
+        if self.error is not None:
+            d["error"] = self.error
+        return d

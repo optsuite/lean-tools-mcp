@@ -189,6 +189,17 @@ class LSPPool:
         client = await self.pick_client()
         return await client.get_document_symbols(file_path)
 
+    async def try_tactics(
+        self,
+        file_path: Path | str,
+        line: int,
+        column: int | None = None,
+        tactics: list[str] | None = None,
+    ) -> list[Any]:
+        """Try multiple tactics at a position via $/lean/tryTactics."""
+        client = await self.pick_client()
+        return await client.try_tactics(file_path, line, column, tactics)
+
     async def check_temp_content(
         self,
         content: str,

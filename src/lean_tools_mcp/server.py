@@ -304,9 +304,9 @@ TOOLS: list[Tool] = [
     Tool(
         name="lean_multi_attempt",
         description=(
-            "Try multiple tactics without modifying the file. Returns goal state for each.\n\n"
-            "Replaces the content at the target line with each snippet, checks via LSP, "
-            "and returns the resulting proof state. Recommended: 3+ snippets per call."
+            "Try multiple tactics at a position without modifying the file.\n\n"
+            "Uses native parallel tactic evaluation when available ($/lean/tryTactics), "
+            "falling back to sequential file-based checking. Recommended: 3+ tactics per call."
         ),
         inputSchema={
             "type": "object",
@@ -317,16 +317,21 @@ TOOLS: list[Tool] = [
                 },
                 "line": {
                     "type": "integer",
-                    "description": "Line number (1-indexed) to replace with each snippet",
+                    "description": "Line number (1-indexed) where proof goals exist",
                     "minimum": 1,
                 },
-                "snippets": {
+                "column": {
+                    "type": "integer",
+                    "description": "Column (1-indexed, defaults to line start)",
+                    "minimum": 1,
+                },
+                "tactics": {
                     "type": "array",
                     "items": {"type": "string"},
                     "description": "Tactics to try (3+ recommended)",
                 },
             },
-            "required": ["file_path", "line", "snippets"],
+            "required": ["file_path", "line", "tactics"],
         },
     ),
     Tool(
@@ -778,7 +783,8 @@ async def _dispatch_tool(
             lsp_pool,
             file_path=args["file_path"],
             line=args["line"],
-            snippets=args["snippets"],
+            tactics=args.get("tactics", args.get("snippets", [])),
+            column=args.get("column"),
         )
 
     # --- Patch tool ---

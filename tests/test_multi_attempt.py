@@ -18,7 +18,7 @@ class TestFormatResults:
         """A single tactic that closes the proof."""
         results = [
             {
-                "snippet": "simp",
+                "tactic": "simp",
                 "goal_state": "no goals",
                 "errors": [],
             }
@@ -33,7 +33,7 @@ class TestFormatResults:
         """A single tactic with an error."""
         results = [
             {
-                "snippet": "ring",
+                "tactic": "ring",
                 "goal_state": "",
                 "errors": ["tactic 'ring' failed"],
             }
@@ -47,17 +47,17 @@ class TestFormatResults:
         """Multiple tactics with mixed results."""
         results = [
             {
-                "snippet": "simp",
+                "tactic": "simp",
                 "goal_state": "⊢ 0 = 0",
                 "errors": [],
             },
             {
-                "snippet": "ring",
+                "tactic": "ring",
                 "goal_state": "no goals",
                 "errors": [],
             },
             {
-                "snippet": "omega",
+                "tactic": "omega",
                 "goal_state": "",
                 "errors": ["omega failed"],
             },
@@ -75,7 +75,7 @@ class TestFormatResults:
         """A tactic that makes progress but doesn't close the proof."""
         results = [
             {
-                "snippet": "  intro h",
+                "tactic": "  intro h",
                 "goal_state": "h : Nat\n⊢ h = h",
                 "errors": [],
             }
@@ -89,22 +89,21 @@ class TestFormatResults:
         """Raw JSON is included in the output."""
         results = [
             {
-                "snippet": "simp",
+                "tactic": "simp",
                 "goal_state": "no goals",
                 "errors": [],
             }
         ]
         output = _format_results(results)
         assert "Raw JSON" in output
-        # Parse the JSON portion
         json_start = output.index("--- Raw JSON ---") + len("--- Raw JSON ---\n")
         json_str = output[json_start:]
         parsed = json.loads(json_str)
         assert len(parsed) == 1
-        assert parsed[0]["snippet"] == "simp"
+        assert parsed[0]["tactic"] == "simp"
 
     def test_empty_results(self):
-        """No snippets tried."""
+        """No tactics tried."""
         results = []
         output = _format_results(results)
         assert "0 tactic" in output

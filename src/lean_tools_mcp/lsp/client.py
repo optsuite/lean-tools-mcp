@@ -20,6 +20,7 @@ from .types import (
     PlainGoal,
     PlainTermGoal,
     Position,
+    TacticResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -359,6 +360,47 @@ class LSPClient:
         )
 
         return result if result else []
+
+    async def try_tactics(
+        self,
+        file_path: Path | str,
+        line: int,
+        column: int | None = None,
+        tactics: list[str] | None = None,
+    ) -> list[TacticResult]:
+        """Try multiple tactics at a position via $/lean/tryTactics.
+
+        Requires a modified Lean binary with the tryTactics endpoint.
+
+        Args:
+            file_path: Path to the .lean file (must already contain a tactic hole).
+            line: 1-indexed line number where goals exist.
+            column: 1-indexed column (defaults to line start).
+            tactics: Tactic strings to try in parallel.
+
+        Returns:
+            List of TacticResult with goals or error for each tactic.
+        """
+        file_path = Path(file_path).resolve()
+        await self._ensure_file_open(file_path)
+
+        uri = path_to_uri(file_path)
+        lsp_line = line - 1
+        lsp_char = (column - 1) if column is not None else 0
+
+        result = await self.transport.send_request(
+            "$/lean/tryTactics",
+            {
+                "textDocument": {"uri": uri},
+                "position": {"line": lsp_line, "character": lsp_char},
+                "tactics": tactics or [],
+            },
+            timeout=self._request_timeout,
+        )
+
+        if not result:
+            return []
+        return [TacticResult.from_dict(r) for r in result]
 
     # -----------------------------------------------------------------
     # Temp file operations (for run_code / multi_attempt)
