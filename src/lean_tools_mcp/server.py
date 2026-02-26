@@ -45,6 +45,7 @@ from .tools.search import (
 )
 from .tools.unified_search import lean_unified_search
 from .tools.lean_meta import lean_havelet_extract, lean_analyze_deps, lean_export_decls
+from .tools.patch import lean_apply_patch
 
 logger = logging.getLogger(__name__)
 
@@ -326,6 +327,55 @@ TOOLS: list[Tool] = [
                 },
             },
             "required": ["file_path", "line", "snippets"],
+        },
+    ),
+    Tool(
+        name="lean_apply_patch",
+        description=(
+            "Apply a partial edit to a .lean file. Two modes:\n\n"
+            "1. Line replacement: set start_line + end_line to replace that range.\n"
+            "2. Search-and-replace: set search to find exact text and replace it.\n\n"
+            "Returns the modified region with surrounding context lines."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Absolute path to the .lean file",
+                },
+                "new_content": {
+                    "type": "string",
+                    "description": "Replacement text (use empty string to delete)",
+                },
+                "start_line": {
+                    "type": "integer",
+                    "description": "First line to replace (1-indexed, inclusive). Use with end_line.",
+                    "minimum": 1,
+                },
+                "end_line": {
+                    "type": "integer",
+                    "description": "Last line to replace (1-indexed, inclusive). Use with start_line.",
+                    "minimum": 1,
+                },
+                "search": {
+                    "type": "string",
+                    "description": "Exact text to find and replace. Alternative to line mode.",
+                },
+                "occurrence": {
+                    "type": "integer",
+                    "description": "Which occurrence to replace (default 1)",
+                    "default": 1,
+                    "minimum": 1,
+                },
+                "context_lines": {
+                    "type": "integer",
+                    "description": "Lines of context around edit (default 5)",
+                    "default": 5,
+                    "minimum": 0,
+                },
+            },
+            "required": ["file_path", "new_content"],
         },
     ),
     # --- External search tools ---
@@ -729,6 +779,18 @@ async def _dispatch_tool(
             file_path=args["file_path"],
             line=args["line"],
             snippets=args["snippets"],
+        )
+
+    # --- Patch tool ---
+    elif name == "lean_apply_patch":
+        return await lean_apply_patch(
+            file_path=args["file_path"],
+            new_content=args["new_content"],
+            start_line=args.get("start_line"),
+            end_line=args.get("end_line"),
+            search=args.get("search"),
+            occurrence=args.get("occurrence", 1),
+            context_lines=args.get("context_lines", 5),
         )
 
     # --- External search tools ---

@@ -24,6 +24,7 @@ class TestToolRegistry:
         "lean_local_search",
         "lean_run_code",
         "lean_multi_attempt",
+        "lean_apply_patch",
         "lean_leansearch",
         "lean_loogle",
         "lean_leanfinder",

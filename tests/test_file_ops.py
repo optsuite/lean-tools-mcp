@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from lean_tools_mcp.tools.file_ops import (
+    _extract_declarations,
     _find_project_root,
     _format_symbol,
     _symbol_kind_name,
@@ -117,10 +118,188 @@ class TestFindProjectRoot:
         # Just check it doesn't crash
 
 
+class TestExtractDeclarations:
+    """Tests for namespace-aware declaration extraction."""
+
+    def test_no_namespace(self):
+        content = "def foo : Nat := 1\ntheorem bar : 1 = 1 := rfl\n"
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "foo" in names
+        assert "bar" in names
+
+    def test_single_namespace(self):
+        content = (
+            "namespace MyNS\n"
+            "def foo : Nat := 1\n"
+            "theorem bar : 1 = 1 := rfl\n"
+            "end MyNS\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "MyNS.foo" in names
+        assert "MyNS.bar" in names
+
+    def test_nested_namespace(self):
+        content = (
+            "namespace A\n"
+            "namespace B\n"
+            "def foo : Nat := 1\n"
+            "end B\n"
+            "def bar : Nat := 2\n"
+            "end A\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "A.B.foo" in names
+        assert "A.bar" in names
+
+    def test_section_does_not_add_prefix(self):
+        content = (
+            "section MySection\n"
+            "def foo : Nat := 1\n"
+            "end MySection\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "foo" in names
+        assert "MySection.foo" not in names
+
+    def test_namespace_inside_section(self):
+        content = (
+            "section Helpers\n"
+            "namespace X\n"
+            "def foo : Nat := 1\n"
+            "end X\n"
+            "end Helpers\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "X.foo" in names
+
+    def test_section_inside_namespace(self):
+        content = (
+            "namespace X\n"
+            "section Internal\n"
+            "def foo : Nat := 1\n"
+            "end Internal\n"
+            "def bar : Nat := 2\n"
+            "end X\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "X.foo" in names
+        assert "X.bar" in names
+
+    def test_reopened_namespace(self):
+        content = (
+            "namespace X\n"
+            "def a : Nat := 1\n"
+            "end X\n"
+            "\n"
+            "namespace X\n"
+            "def b : Nat := 2\n"
+            "end X\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "X.a" in names
+        assert "X.b" in names
+
+    def test_after_namespace_end(self):
+        content = (
+            "namespace X\n"
+            "def inside : Nat := 1\n"
+            "end X\n"
+            "def outside : Nat := 2\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "X.inside" in names
+        assert "outside" in names
+
+    def test_line_numbers(self):
+        content = (
+            "namespace X\n"      # line 1
+            "def foo := 1\n"     # line 2
+            "end X\n"            # line 3
+        )
+        decls = _extract_declarations(content)
+        assert decls == [("X.foo", 2)]
+
+    def test_private_and_protected(self):
+        content = (
+            "namespace X\n"
+            "private def secret : Nat := 1\n"
+            "protected def visible : Nat := 2\n"
+            "end X\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "X.secret" in names
+        assert "X.visible" in names
+
+    def test_noncomputable(self):
+        content = (
+            "namespace X\n"
+            "noncomputable def foo : Nat := 1\n"
+            "end X\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "X.foo" in names
+
+    def test_all_decl_kinds(self):
+        content = (
+            "namespace N\n"
+            "def d := 1\n"
+            "theorem t : True := trivial\n"
+            "lemma l : True := trivial\n"
+            "abbrev a := Nat\n"
+            "structure S where\n"
+            "class C where\n"
+            "inductive I where\n"
+            "axiom ax : True\n"
+            "opaque op : Nat\n"
+            "end N\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        for expected in ["N.d", "N.t", "N.l", "N.a", "N.S", "N.C", "N.I", "N.ax", "N.op"]:
+            assert expected in names, f"{expected} not found in {names}"
+
+    def test_comments_ignored(self):
+        content = (
+            "namespace X\n"
+            "-- def notADecl : Nat := 1\n"
+            "def real : Nat := 2\n"
+            "end X\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "X.real" in names
+        assert len(decls) == 1
+
+    def test_bare_end(self):
+        content = (
+            "namespace X\n"
+            "def foo := 1\n"
+            "end\n"
+            "def bar := 2\n"
+        )
+        decls = _extract_declarations(content)
+        names = [n for n, _ in decls]
+        assert "X.foo" in names
+        assert "bar" in names
+
+    def test_empty_file(self):
+        assert _extract_declarations("") == []
+        assert _extract_declarations("\n\n\n") == []
+
+
 class TestLocalSearch:
     @pytest.mark.asyncio
     async def test_search_finds_declarations(self, tmp_path: Path):
-        # Create a mini Lean project
         (tmp_path / "lakefile.lean").write_text('import Lake\nopen Lake DSL\npackage test\n')
         src = tmp_path / "src"
         src.mkdir()
@@ -139,7 +318,6 @@ class TestLocalSearch:
         (tmp_path / "lakefile.lean").write_text('import Lake\n')
         src = tmp_path / "src"
         src.mkdir()
-        # Create many declarations
         lines = [f"def item{i} : Nat := {i}" for i in range(20)]
         (src / "Many.lean").write_text("\n".join(lines))
 
@@ -153,3 +331,68 @@ class TestLocalSearch:
 
         result = await lean_local_search(str(tmp_path / "Main.lean"), "nonexistent")
         assert "No declarations" in result
+
+    @pytest.mark.asyncio
+    async def test_search_by_namespace_prefix(self, tmp_path: Path):
+        """Searching by namespace prefix should find declarations."""
+        (tmp_path / "lakefile.lean").write_text('import Lake\n')
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "Types.lean").write_text(
+            "namespace ProofRunner\n"
+            "structure RangePos where\n"
+            "  line : Nat\n"
+            "structure HypRec where\n"
+            "  name : String\n"
+            "end ProofRunner\n"
+        )
+
+        result = await lean_local_search(str(src / "Types.lean"), "ProofRunner")
+        assert "ProofRunner.RangePos" in result
+        assert "ProofRunner.HypRec" in result
+
+    @pytest.mark.asyncio
+    async def test_search_by_qualified_name(self, tmp_path: Path):
+        """Searching by full qualified name should find the declaration."""
+        (tmp_path / "lakefile.lean").write_text('import Lake\n')
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "Lib.lean").write_text(
+            "namespace MyLib\n"
+            "def helper : Nat := 42\n"
+            "end MyLib\n"
+        )
+
+        result = await lean_local_search(str(src / "Lib.lean"), "MyLib.helper")
+        assert "MyLib.helper" in result
+
+    @pytest.mark.asyncio
+    async def test_search_by_short_name_in_namespace(self, tmp_path: Path):
+        """Searching by short name still finds declarations inside namespaces."""
+        (tmp_path / "lakefile.lean").write_text('import Lake\n')
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "Lib.lean").write_text(
+            "namespace X\n"
+            "def myFunc : Nat := 1\n"
+            "end X\n"
+        )
+
+        result = await lean_local_search(str(src / "Lib.lean"), "myFunc")
+        assert "X.myFunc" in result
+
+    @pytest.mark.asyncio
+    async def test_section_not_in_prefix(self, tmp_path: Path):
+        """Section names should not appear in qualified names."""
+        (tmp_path / "lakefile.lean").write_text('import Lake\n')
+        src = tmp_path / "src"
+        src.mkdir()
+        (src / "Lib.lean").write_text(
+            "section Helpers\n"
+            "def topLevel : Nat := 1\n"
+            "end Helpers\n"
+        )
+
+        result = await lean_local_search(str(src / "Lib.lean"), "topLevel")
+        assert "topLevel" in result
+        assert "Helpers.topLevel" not in result

@@ -200,6 +200,75 @@ async def lean_declaration_file(
 # lean_local_search
 # ---------------------------------------------------------------------------
 
+_DECL_LINE_RE = re.compile(
+    r'^(?:private\s+)?(?:protected\s+)?(?:noncomputable\s+)?'
+    r'(?:theorem|lemma|def|abbrev|instance|class|structure|inductive|axiom|opaque)\s+'
+    r'(\S+)',
+)
+_NAMESPACE_RE = re.compile(r'^namespace\s+(\S+)')
+_SECTION_RE = re.compile(r'^section\s+(\S+)')
+_END_RE = re.compile(r'^end\s*(\S*)')
+
+
+def _extract_declarations(content: str) -> list[tuple[str, int]]:
+    """Extract (qualified_name, line_number) pairs from a .lean file.
+
+    Tracks namespace/section/end blocks to build fully qualified names.
+    Sections do NOT contribute to the qualified name prefix.
+    """
+    results: list[tuple[str, int]] = []
+
+    # Each entry: ("namespace", name) or ("section", name)
+    scope_stack: list[tuple[str, str]] = []
+
+    for line_idx, raw_line in enumerate(content.split("\n")):
+        line = raw_line.strip()
+
+        # Skip comments
+        if line.startswith("--"):
+            continue
+
+        # namespace Foo
+        m = _NAMESPACE_RE.match(line)
+        if m:
+            scope_stack.append(("namespace", m.group(1)))
+            continue
+
+        # section Foo
+        m = _SECTION_RE.match(line)
+        if m:
+            scope_stack.append(("section", m.group(1)))
+            continue
+
+        # end / end Foo
+        m = _END_RE.match(line)
+        if m and (m.group(0) != "end" or not line[3:].strip() or line == "end"):
+            # Only process if it's a standalone 'end' or 'end <name>'
+            end_name = m.group(1)
+            if scope_stack:
+                if end_name:
+                    # Pop until we find the matching scope
+                    for i in range(len(scope_stack) - 1, -1, -1):
+                        if scope_stack[i][1] == end_name:
+                            scope_stack.pop(i)
+                            break
+                else:
+                    scope_stack.pop()
+            continue
+
+        # Declaration
+        m = _DECL_LINE_RE.match(line)
+        if m:
+            short_name = m.group(1)
+            ns_prefix = ".".join(
+                name for kind, name in scope_stack if kind == "namespace"
+            )
+            qualified = f"{ns_prefix}.{short_name}" if ns_prefix else short_name
+            results.append((qualified, line_idx + 1))
+
+    return results
+
+
 async def lean_local_search(
     file_path: str,
     query: str,
@@ -208,29 +277,26 @@ async def lean_local_search(
     """Fast local search to verify declarations exist. Use BEFORE trying a lemma name.
 
     Searches through .lean files in the project for declarations matching
-    the query string. Much faster than online search tools.
+    the query string. Returns fully qualified names (namespace-aware).
 
     Args:
         file_path: Absolute path to any .lean file in the project (used to
                    determine the project root)
-        query: Declaration name or prefix to search for
+        query: Declaration name, qualified name, or substring to search for
         limit: Maximum number of matches to return (default 10)
 
     Returns:
         Matching declarations found in the project.
     """
-    # Determine project root by looking for lakefile.lean
     p = Path(file_path).resolve()
     project_root = _find_project_root(p)
 
     if project_root is None:
         return f"Could not find project root (no lakefile.lean) for {file_path}"
 
-    # Search through .lean files
     matches: list[str] = []
     query_lower = query.lower()
 
-    # Search in common source directories
     search_dirs = [project_root]
     src_dir = project_root / "src"
     if src_dir.exists():
@@ -238,14 +304,6 @@ async def lean_local_search(
     lib_dir = project_root / "lib"
     if lib_dir.exists():
         search_dirs.append(lib_dir)
-
-    # Patterns to match declarations
-    decl_pattern = re.compile(
-        r'^(?:private\s+)?(?:protected\s+)?(?:noncomputable\s+)?'
-        r'(?:theorem|lemma|def|abbrev|instance|class|structure|inductive|axiom|opaque)\s+'
-        r'(\S+)',
-        re.MULTILINE,
-    )
 
     for search_dir in search_dirs:
         if len(matches) >= limit:
@@ -258,13 +316,11 @@ async def lean_local_search(
             except (OSError, UnicodeDecodeError):
                 continue
 
-            for m in decl_pattern.finditer(content):
-                name = m.group(1)
-                if query_lower in name.lower():
-                    # Get line number
-                    line_num = content[:m.start()].count("\n") + 1
+            decls = _extract_declarations(content)
+            for qualified_name, line_num in decls:
+                if query_lower in qualified_name.lower():
                     rel_path = lean_file.relative_to(project_root)
-                    matches.append(f"{name}  ({rel_path}:{line_num})")
+                    matches.append(f"{qualified_name}  ({rel_path}:{line_num})")
                     if len(matches) >= limit:
                         break
 
