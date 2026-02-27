@@ -1,0 +1,94 @@
+{
+  "lean_version": "Lean (version 4.29.0, arm64-apple-darwin22.6.0, commit 83e54b65b65d1d3ce31d99d820a7bd5f3e219295, Release)",
+  "project_root": "/Users/wzy/study/lean/mcp_test/test_mathlib_v430",
+  "num_files": 5,
+  "use_mathlib": true,
+  "elapsed_seconds": 372.62115145800635,
+  "platform": "arm64 Darwin",
+  "timestamp": "2026-02-27 19:55:29",
+  "snapshots": [
+    {
+      "timestamp": 2.0298737920820713,
+      "label": "after_init",
+      "num_processes": 1,
+      "total_rss_mb": 174.1,
+      "per_process_rss_mb": [
+        174.1
+      ]
+    },
+    {
+      "timestamp": 64.13886458310299,
+      "label": "after_file_0",
+      "num_processes": 2,
+      "total_rss_mb": 3122.8,
+      "per_process_rss_mb": [
+        278.8,
+        2844.0
+      ]
+    },
+    {
+      "timestamp": 126.26001524995081,
+      "label": "after_file_1",
+      "num_processes": 3,
+      "total_rss_mb": 5721.0,
+      "per_process_rss_mb": [
+        114.0,
+        2766.0,
+        2841.0
+      ]
+    },
+    {
+      "timestamp": 188.37675424991176,
+      "label": "after_file_2",
+      "num_processes": 4,
+      "total_rss_mb": 8476.7,
+      "per_process_rss_mb": [
+        106.5,
+        2765.5,
+        2764.7,
+        2839.9
+      ]
+    },
+    {
+      "timestamp": 250.49361983290873,
+      "label": "after_file_3",
+      "num_processes": 5,
+      "total_rss_mb": 11197.8,
+      "per_process_rss_mb": [
+        75.9,
+        2763.7,
+        2762.7,
+        2751.6,
+        2843.9
+      ]
+    },
+    {
+      "timestamp": 312.6121535000857,
+      "label": "after_file_4",
+      "num_processes": 6,
+      "total_rss_mb": 13721.3,
+      "per_process_rss_mb": [
+        48.6,
+        2554.0,
+        2762.7,
+        2751.6,
+        2762.9,
+        2841.5
+      ]
+    },
+    {
+      "timestamp": 372.6210697500501,
+      "label": "final",
+      "num_processes": 6,
+      "total_rss_mb": 13640.2,
+      "per_process_rss_mb": [
+        45.8,
+        2554.0,
+        2757.9,
+        2751.0,
+        2762.9,
+        2768.7
+      ]
+    }
+  ]
+}

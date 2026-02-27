@@ -672,6 +672,7 @@ def create_server(config: ServerConfig) -> tuple[Server, LSPPool, SlidingWindowL
         lean_path=config.lsp.lean_path,
         request_timeout=config.lsp.request_timeout,
         file_check_timeout=config.lsp.file_check_timeout,
+        use_inprocess_workers=config.lsp.use_inprocess_workers,
     )
     rate_limiter = create_default_limiter()
     llm_client = LLMClient(config.llm)
@@ -1039,6 +1040,12 @@ examples:
         help="Number of LSP server instances (default: 2)",
     )
     parser.add_argument(
+        "--inprocess",
+        action="store_true",
+        default=None,
+        help="Use in-process workers (shared Environment, saves ~80%% memory with Mathlib)",
+    )
+    parser.add_argument(
         "--transport",
         choices=["stdio", "sse"],
         default=None,
@@ -1086,6 +1093,8 @@ examples:
         config.lsp.lean_path = args.lean_path
     if args.pool_size:
         config.lsp.pool_size = args.pool_size
+    if args.inprocess:
+        config.lsp.use_inprocess_workers = True
     if args.transport:
         config.transport = args.transport
     if args.host:

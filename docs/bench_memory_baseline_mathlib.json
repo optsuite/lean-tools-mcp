@@ -1,0 +1,65 @@
+{
+  "lean_version": "Lean (version 4.24.0-rc1, arm64-apple-darwin23.6.0, commit 919e297292280cdb27598edd4e03437be5850221, Release)",
+  "project_root": "/Users/wzy/study/lean/v4.24.0-rc1/lean_tools_suite",
+  "num_files": 3,
+  "use_mathlib": true,
+  "elapsed_seconds": 188.10570775019005,
+  "platform": "arm64 Darwin",
+  "timestamp": "2026-02-27 01:24:03",
+  "snapshots": [
+    {
+      "timestamp": 2.0366367080714554,
+      "label": "after_init",
+      "num_processes": 1,
+      "total_rss_mb": 253.9,
+      "per_process_rss_mb": [
+        253.9
+      ]
+    },
+    {
+      "timestamp": 49.05858404212631,
+      "label": "after_file_0",
+      "num_processes": 2,
+      "total_rss_mb": 2485.1,
+      "per_process_rss_mb": [
+        112.2,
+        2372.8
+      ]
+    },
+    {
+      "timestamp": 96.08018370810896,
+      "label": "after_file_1",
+      "num_processes": 3,
+      "total_rss_mb": 4764.4,
+      "per_process_rss_mb": [
+        104.2,
+        2334.8,
+        2325.4
+      ]
+    },
+    {
+      "timestamp": 143.0990296250675,
+      "label": "after_file_2",
+      "num_processes": 4,
+      "total_rss_mb": 7006.0,
+      "per_process_rss_mb": [
+        37.8,
+        2315.5,
+        2325.4,
+        2327.3
+      ]
+    },
+    {
+      "timestamp": 188.1056748330593,
+      "label": "final",
+      "num_processes": 4,
+      "total_rss_mb": 6959.9,
+      "per_process_rss_mb": [
+        37.6,
+        2272.7,
+        2322.3,
+        2327.3
+      ]
+    }
+  ]
+}

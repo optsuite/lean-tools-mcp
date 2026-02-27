@@ -120,3 +120,18 @@ class TestLoadConfig:
         config = load_config(project_root=tmp_path)
         assert config.sse_host == "127.0.0.1"
         assert config.sse_port == 8080
+
+    def test_inprocess_default_off(self, tmp_path: Path):
+        config = load_config(project_root=tmp_path)
+        assert config.lsp.use_inprocess_workers is False
+
+    def test_env_inprocess_workers(self, tmp_path: Path, monkeypatch):
+        """LEAN_WORKER_INPROCESS=1 should enable in-process workers."""
+        monkeypatch.setenv("LEAN_WORKER_INPROCESS", "1")
+        config = load_config(project_root=tmp_path)
+        assert config.lsp.use_inprocess_workers is True
+
+    def test_env_inprocess_workers_off(self, tmp_path: Path, monkeypatch):
+        monkeypatch.setenv("LEAN_WORKER_INPROCESS", "0")
+        config = load_config(project_root=tmp_path)
+        assert config.lsp.use_inprocess_workers is False

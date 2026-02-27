@@ -1,0 +1,94 @@
+{
+  "lean_version": "Lean (version 4.30.0-pre, arm64-apple-darwin22.6.0, commit b3b4867d6c65a2342068521d8e1b7922f4bde156, Release)",
+  "project_root": "/Users/wzy/study/lean/mcp_test/test_v4280rc1",
+  "num_files": 5,
+  "use_mathlib": false,
+  "elapsed_seconds": 63.06900587491691,
+  "platform": "arm64 Darwin",
+  "timestamp": "2026-02-27 16:39:13",
+  "snapshots": [
+    {
+      "timestamp": 2.036619500024244,
+      "label": "after_init",
+      "num_processes": 1,
+      "total_rss_mb": 187.9,
+      "per_process_rss_mb": [
+        187.9
+      ]
+    },
+    {
+      "timestamp": 12.222358958097175,
+      "label": "after_file_0",
+      "num_processes": 2,
+      "total_rss_mb": 625.7,
+      "per_process_rss_mb": [
+        278.3,
+        347.4
+      ]
+    },
+    {
+      "timestamp": 24.45732079190202,
+      "label": "after_file_1",
+      "num_processes": 3,
+      "total_rss_mb": 973.7,
+      "per_process_rss_mb": [
+        278.6,
+        347.4,
+        347.7
+      ]
+    },
+    {
+      "timestamp": 34.65589866694063,
+      "label": "after_file_2",
+      "num_processes": 4,
+      "total_rss_mb": 1321.9,
+      "per_process_rss_mb": [
+        279.5,
+        347.4,
+        347.7,
+        347.4
+      ]
+    },
+    {
+      "timestamp": 44.84800104191527,
+      "label": "after_file_3",
+      "num_processes": 5,
+      "total_rss_mb": 1670.5,
+      "per_process_rss_mb": [
+        280.4,
+        347.4,
+        347.7,
+        347.4,
+        347.6
+      ]
+    },
+    {
+      "timestamp": 55.05876574991271,
+      "label": "after_file_4",
+      "num_processes": 6,
+      "total_rss_mb": 2018.9,
+      "per_process_rss_mb": [
+        281.3,
+        347.4,
+        347.7,
+        347.4,
+        347.6,
+        347.5
+      ]
+    },
+    {
+      "timestamp": 63.06898795790039,
+      "label": "final",
+      "num_processes": 6,
+      "total_rss_mb": 2018.9,
+      "per_process_rss_mb": [
+        281.3,
+        347.4,
+        347.7,
+        347.4,
+        347.6,
+        347.5
+      ]
+    }
+  ]
+}

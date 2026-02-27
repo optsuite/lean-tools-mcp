@@ -8,13 +8,14 @@ Configuration is loaded from (in order of precedence):
   4. Default values (lowest priority)
 
 Environment variables:
-  LEAN_EXECUTABLE    Path to the lean binary (default: "lean", auto-detected via elan)
-  LEAN_LSP_POOL_SIZE Number of LSP server instances (default: 2)
-  LEAN_LSP_TIMEOUT   LSP request timeout in seconds (default: 60)
-  LLM_DEFAULT_MODEL  Default LLM model name (default: "deepseek-chat")
-  MCP_TRANSPORT      Transport mode: "stdio" or "sse" (default: "stdio")
-  MCP_SSE_HOST       SSE server host (default: "127.0.0.1")
-  MCP_SSE_PORT       SSE server port (default: 8080)
+  LEAN_EXECUTABLE        Path to the lean binary (default: "lean", auto-detected via elan)
+  LEAN_LSP_POOL_SIZE     Number of LSP server instances (default: 2)
+  LEAN_LSP_TIMEOUT       LSP request timeout in seconds (default: 60)
+  LEAN_WORKER_INPROCESS  Set to "1" to use in-process workers (shared Environment, saves memory)
+  LLM_DEFAULT_MODEL      Default LLM model name (default: "deepseek-chat")
+  MCP_TRANSPORT          Transport mode: "stdio" or "sse" (default: "stdio")
+  MCP_SSE_HOST           SSE server host (default: "127.0.0.1")
+  MCP_SSE_PORT           SSE server port (default: 8080)
 """
 
 from __future__ import annotations
@@ -38,6 +39,9 @@ class LSPConfig:
     request_timeout: float = 60.0
     # Timeout for waiting for file checking to complete (seconds)
     file_check_timeout: float = 120.0
+    # Use in-process workers (requires modified lean with Phase 2 changes).
+    # Shares Environment across workers, reducing memory by ~80% for Mathlib.
+    use_inprocess_workers: bool = False
 
 
 @dataclass
@@ -139,6 +143,7 @@ def load_config(
         lean_path=os.environ.get("LEAN_EXECUTABLE", "lean"),
         pool_size=int(os.environ.get("LEAN_LSP_POOL_SIZE", "2")),
         request_timeout=float(os.environ.get("LEAN_LSP_TIMEOUT", "60")),
+        use_inprocess_workers=os.environ.get("LEAN_WORKER_INPROCESS", "") == "1",
     )
 
     providers = load_llm_providers(config_path)

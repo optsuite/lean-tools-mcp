@@ -42,11 +42,13 @@ class LSPClient:
         lean_path: str = "lean",
         request_timeout: float = 60.0,
         file_check_timeout: float = 120.0,
+        use_inprocess_workers: bool = False,
     ) -> None:
         self._project_root = Path(project_root).resolve()
         self._lean_path = lean_path
         self._request_timeout = request_timeout
         self._file_check_timeout = file_check_timeout
+        self._use_inprocess_workers = use_inprocess_workers
 
         self._process: asyncio.subprocess.Process | None = None
         self._transport: JsonRpcTransport | None = None
@@ -90,6 +92,13 @@ class LSPClient:
             self._project_root,
         )
 
+        env = None
+        if self._use_inprocess_workers:
+            import os
+            env = os.environ.copy()
+            env["LEAN_WORKER_INPROCESS"] = "1"
+            logger.info("In-process worker mode enabled (LEAN_WORKER_INPROCESS=1)")
+
         self._process = await asyncio.create_subprocess_exec(
             self._lean_path,
             "--server",
@@ -97,6 +106,7 @@ class LSPClient:
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
             cwd=str(self._project_root),
+            env=env,
         )
 
         assert self._process.stdin is not None

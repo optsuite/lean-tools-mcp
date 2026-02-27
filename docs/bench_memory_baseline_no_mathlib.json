@@ -1,0 +1,61 @@
+{
+  "lean_version": "Lean (version 4.30.0-pre, arm64-apple-darwin22.6.0, commit b3b4867d6c65a2342068521d8e1b7922f4bde156, Release)",
+  "project_root": "/Users/wzy/study/lean/mcp_test/test_v4280rc1",
+  "num_files": 5,
+  "use_mathlib": false,
+  "elapsed_seconds": 53.9,
+  "platform": "arm64 Darwin",
+  "timestamp": "2026-02-27 01:18:27",
+  "architecture": "current (separate FileWorker processes)",
+  "snapshots": [
+    {
+      "timestamp": 2.0,
+      "label": "after_init",
+      "num_processes": 1,
+      "total_rss_mb": 172.2,
+      "per_process_rss_mb": [172.2]
+    },
+    {
+      "timestamp": 10.2,
+      "label": "after_file_0",
+      "num_processes": 2,
+      "total_rss_mb": 626.4,
+      "per_process_rss_mb": [278.8, 347.6]
+    },
+    {
+      "timestamp": 24.5,
+      "label": "after_file_1",
+      "num_processes": 3,
+      "total_rss_mb": 974.2,
+      "per_process_rss_mb": [279.1, 347.6, 347.5]
+    },
+    {
+      "timestamp": 32.6,
+      "label": "after_file_2",
+      "num_processes": 4,
+      "total_rss_mb": 1322.6,
+      "per_process_rss_mb": [280.0, 347.6, 347.5, 347.5]
+    },
+    {
+      "timestamp": 40.7,
+      "label": "after_file_3",
+      "num_processes": 5,
+      "total_rss_mb": 1670.7,
+      "per_process_rss_mb": [280.9, 347.6, 347.5, 347.5, 347.2]
+    },
+    {
+      "timestamp": 48.9,
+      "label": "after_file_4",
+      "num_processes": 6,
+      "total_rss_mb": 2018.6,
+      "per_process_rss_mb": [281.8, 347.6, 347.5, 347.5, 347.2, 347.0]
+    },
+    {
+      "timestamp": 53.9,
+      "label": "final",
+      "num_processes": 6,
+      "total_rss_mb": 2018.6,
+      "per_process_rss_mb": [281.8, 347.6, 347.5, 347.5, 347.2, 347.0]
+    }
+  ]
+}

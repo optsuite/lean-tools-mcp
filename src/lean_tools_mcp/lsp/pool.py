@@ -31,12 +31,14 @@ class LSPPool:
         lean_path: str = "lean",
         request_timeout: float = 60.0,
         file_check_timeout: float = 120.0,
+        use_inprocess_workers: bool = False,
     ) -> None:
         self._project_root = Path(project_root).resolve()
         self._pool_size = pool_size
         self._lean_path = lean_path
         self._request_timeout = request_timeout
         self._file_check_timeout = file_check_timeout
+        self._use_inprocess_workers = use_inprocess_workers
 
         self._clients: list[LSPClient] = []
         self._robin_index = 0
@@ -70,6 +72,7 @@ class LSPPool:
                 lean_path=self._lean_path,
                 request_timeout=self._request_timeout,
                 file_check_timeout=self._file_check_timeout,
+                use_inprocess_workers=self._use_inprocess_workers,
             )
             self._clients.append(client)
             tasks.append(client.start())
