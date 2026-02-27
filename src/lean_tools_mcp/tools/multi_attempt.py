@@ -54,7 +54,8 @@ async def lean_multi_attempt(
             lsp_pool, str(original_path), line, tactics, column
         )
     except LSPProtocolError as e:
-        if "method not found" in str(e).lower() or "Unknown" in str(e):
+        msg = str(e).lower()
+        if "method not found" in msg or "unknown" in msg or "no request handler" in msg or "-32601" in msg:
             logger.info(
                 "$/lean/tryTactics not available, falling back to file-based approach: %s",
                 e,

@@ -1046,6 +1046,12 @@ examples:
         help="Use in-process workers (shared Environment, saves ~80%% memory with Mathlib)",
     )
     parser.add_argument(
+        "--lean-builds-dir",
+        type=str,
+        default=None,
+        help="Directory containing modified lean builds (default: ~/lean-builds/)",
+    )
+    parser.add_argument(
         "--transport",
         choices=["stdio", "sse"],
         default=None,
@@ -1095,6 +1101,9 @@ examples:
         config.lsp.pool_size = args.pool_size
     if args.inprocess:
         config.lsp.use_inprocess_workers = True
+    if args.lean_builds_dir:
+        from pathlib import Path as _P
+        config.lsp.lean_builds_dir = _P(args.lean_builds_dir)
     if args.transport:
         config.transport = args.transport
     if args.host:

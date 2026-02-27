@@ -384,12 +384,12 @@ class TestTools:
         print(f"\n[test_lean_multi_attempt_basic] file = {test_file}")
 
         # Try multiple tactics at line 2 (where "sorry" is)
-        snippets = ["  simp", "  ring", "  omega"]
+        tactics = ["  simp", "  ring", "  omega"]
         result = await lean_multi_attempt(
             pool,
             file_path=str(test_file),
             line=2,
-            snippets=snippets,
+            tactics=tactics,
         )
         print(f"  result:\n{result}")
         assert isinstance(result, str)
@@ -411,12 +411,12 @@ class TestTools:
         print(f"\n[test_lean_multi_attempt_with_errors] file = {test_file}")
 
         # Mix of valid and invalid tactics
-        snippets = ["  rfl", "  nonsense_tactic"]
+        tactics = ["  rfl", "  nonsense_tactic"]
         result = await lean_multi_attempt(
             pool,
             file_path=str(test_file),
             line=2,
-            snippets=snippets,
+            tactics=tactics,
         )
         print(f"  result:\n{result}")
         assert isinstance(result, str)

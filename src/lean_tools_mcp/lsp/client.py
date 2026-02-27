@@ -86,15 +86,20 @@ class LSPClient:
 
     async def start(self) -> None:
         """Spawn `lean --server` and perform the LSP initialization handshake."""
+        import os
+
+        lean_display = self._lean_path
+        if os.path.isabs(self._lean_path):
+            lean_display = self._lean_path
         logger.info(
-            "Starting LSP server: %s --server (root=%s)",
-            self._lean_path,
+            "Starting LSP server: %s --server (root=%s, inprocess=%s)",
+            lean_display,
             self._project_root,
+            self._use_inprocess_workers,
         )
 
         env = None
         if self._use_inprocess_workers:
-            import os
             env = os.environ.copy()
             env["LEAN_WORKER_INPROCESS"] = "1"
             logger.info("In-process worker mode enabled (LEAN_WORKER_INPROCESS=1)")
