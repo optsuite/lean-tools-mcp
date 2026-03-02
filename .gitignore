@@ -37,3 +37,6 @@ Thumbs.db
 config.json
 .env
 lean/temp/
+
+# Local docs (not shared to GitHub)
+docs/_private/

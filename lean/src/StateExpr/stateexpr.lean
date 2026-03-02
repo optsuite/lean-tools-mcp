@@ -1,3 +1,7 @@
+-- Author: Lean Tools MCP Contributors
+-- Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
+-- License: MIT
+
 -- 我们需要导入 Lean 和 Json 库
 import Lean
 import Lean.Data.Json

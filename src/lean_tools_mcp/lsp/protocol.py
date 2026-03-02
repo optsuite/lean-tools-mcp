@@ -1,3 +1,7 @@
+# Author: Lean Tools MCP Contributors
+# Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
+# License: MIT
+
 """
 JSON-RPC 2.0 over stdio protocol layer for LSP communication.
 

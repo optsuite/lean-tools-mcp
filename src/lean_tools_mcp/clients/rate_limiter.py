@@ -1,3 +1,7 @@
+# Author: Lean Tools MCP Contributors
+# Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
+# License: MIT
+
 """
 Sliding window rate limiter for external HTTP search APIs.
 

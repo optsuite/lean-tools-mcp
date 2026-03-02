@@ -1,3 +1,7 @@
+-- Author: Lean Tools MCP Contributors
+-- Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
+-- License: MIT
+
 /-
 havelet-generator (lake exe 版本，避开 .ofFVar(Id)Info 以及 ti.expr? / ti.lctx? 差异)
 ==================================================================================

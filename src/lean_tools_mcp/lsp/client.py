@@ -1,3 +1,7 @@
+# Author: Lean Tools MCP Contributors
+# Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
+# License: MIT
+
 """
 LSP Client — manages a single `lean --server` subprocess.
 

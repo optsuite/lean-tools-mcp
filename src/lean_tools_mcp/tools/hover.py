@@ -1,3 +1,7 @@
+# Author: Lean Tools MCP Contributors
+# Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
+# License: MIT
+
 """
 lean_hover_info — type signature and documentation tool.
 

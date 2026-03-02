@@ -1,300 +1,190 @@
 # Lean Tools MCP
 
-A high-concurrency **Model Context Protocol (MCP)** server for **Lean 4** development tools. It provides 21 tools covering LSP interaction, theorem search, LLM integration, and Lean metaprogramming — all backed by a pooled LSP architecture for massive parallelism with bounded memory.
+Lean Tools MCP is a Lean 4 MCP server focused on two engineering goals:
 
-## Features
+- Better parallel throughput for proof-assistant workflows.
+- Lower memory usage under heavy imports (especially Mathlib).
 
-- **LSP-backed architecture** — uses `lean --server` instances in a pool (no REPL), supporting high parallelism with low memory footprint
-- **Dual transport** — stdio for local IDE integration (Cursor, Claude Desktop) and SSE/HTTP for remote deployment
-- **21 MCP tools** in 5 categories:
-  - Proof state & diagnostics (goal, hover, completions, etc.)
-  - File operations (outline, contents, declarations, local search)
-  - External search (LeanSearch, Loogle, LeanFinder, StateSearch, HammerPremise)
-  - LLM integration (multi-provider chat, unified search)
-  - Lean metaprogramming (have/let extraction, dependency analysis, declaration export)
+The core strategy is an LSP pool plus optional in-process workers, so high-concurrency requests stay responsive while memory remains bounded.
+
+Maintainer contacts: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
+
+## Why This Project
+
+Compared with existing Lean MCP servers, this project emphasizes:
+
+- High-concurrency LSP dispatch with pooled `lean --server` workers.
+- Memory optimization path for Mathlib-heavy workloads (`--inprocess`).
+- A broader integrated toolset (LSP + search + LLM + Lean metaprogramming + patching).
+
+## Related Lean MCP Tools
+
+- [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp)
+- [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp)
+- [LeanTool](https://github.com/GasStationManager/LeanTool)
+
+Data below is organized from project docs/source snapshots checked on 2026-03-02.
+
+## Tool Union (All Compared Projects)
+
+| Category | Tool union |
+|---|---|
+| Proof state / diagnostics | `lean_goal`, `lean_term_goal`, `lean_diagnostic_messages`, `lean_hover_info`, `lean_completions`, `lean_code_actions`, `lean_get_widgets`, `lean_get_widget_source`, `lean_verify`, `check_lean` |
+| File / project operations | `lean_file_outline`, `lean_file_contents`, `lean_declaration_file`, `lean_local_search`, `lean_build`, `lean_apply_patch`, `execute-lean`, `execute-lean-persistent`, `cleanup-session` |
+| Code execution / profiling | `lean_run_code`, `lean_multi_attempt`, `lean_profile_proof` |
+| Mathlib search | `lean_leansearch`, `lean_loogle`, `lean_leanfinder`, `lean_state_search`, `lean_hammer_premise`, `lean_unified_search` |
+| LLM / metaprogramming | `lean_llm_query`, `lean_havelet_extract`, `lean_analyze_deps`, `lean_export_decls` |
+
+## Feature Coverage Matrix
+
+| Tool | lean-tools-mcp | lean-lsp-mcp | lean-docker-mcp | LeanTool |
+|---|---|---|---|---|
+| `lean_goal` | ✅ | ✅ |  |  |
+| `lean_term_goal` | ✅ | ✅ |  |  |
+| `lean_diagnostic_messages` | ✅ | ✅ |  |  |
+| `lean_hover_info` | ✅ | ✅ |  |  |
+| `lean_completions` | ✅ | ✅ |  |  |
+| `lean_file_outline` | ✅ | ✅ |  |  |
+| `lean_file_contents` | ✅ |  |  |  |
+| `lean_declaration_file` | ✅ | ✅ |  |  |
+| `lean_local_search` | ✅ | ✅ |  |  |
+| `lean_run_code` | ✅ | ✅ |  |  |
+| `lean_multi_attempt` | ✅ | ✅ |  |  |
+| `lean_apply_patch` | ✅ |  |  |  |
+| `lean_code_actions` |  | ✅ |  |  |
+| `lean_get_widgets` |  | ✅ |  |  |
+| `lean_get_widget_source` |  | ✅ |  |  |
+| `lean_profile_proof` |  | ✅ |  |  |
+| `lean_verify` |  | ✅ |  |  |
+| `lean_build` |  | ✅ |  |  |
+| `lean_leansearch` | ✅ | ✅ |  |  |
+| `lean_loogle` | ✅ | ✅ |  |  |
+| `lean_leanfinder` | ✅ | ✅ |  |  |
+| `lean_state_search` | ✅ | ✅ |  |  |
+| `lean_hammer_premise` | ✅ | ✅ |  |  |
+| `lean_unified_search` | ✅ |  |  |  |
+| `lean_llm_query` | ✅ |  |  |  |
+| `lean_havelet_extract` | ✅ |  |  |  |
+| `lean_analyze_deps` | ✅ |  |  |  |
+| `lean_export_decls` | ✅ |  |  |  |
+| `execute-lean` |  |  | ✅ |  |
+| `execute-lean-persistent` |  |  | ✅ |  |
+| `cleanup-session` |  |  | ✅ |  |
+| `check_lean` |  |  |  | ✅ |
+
+## Mathlib Memory Savings by Version / Scenario
+
+Benchmark source files are under `docs/bench_memory_*.json`. Metric here is **peak total RSS (MB)** from `snapshots[].total_rss_mb`.
+
+| Lean version | Mathlib scenario | Process peak RSS | In-process peak RSS | Memory saved |
+|---|---:|---:|---:|---:|
+| 4.29.0 (commit `83e54b65`) | 3 files | 8507.1 MB | 3060.1 MB | 64.0% |
+| 4.29.0 (commit `83e54b65`) | 5 files | 13721.3 MB | 2934.9 MB | 78.6% |
+| 4.29.0-rc2 (commit `83e54b65`) | 3 files | 8547.0 MB | N/A | N/A |
+| 4.24.0-rc1 (commit `919e2972`) | 3 files | 7006.0 MB | N/A | N/A |
+
+Principle (brief): in-process mode keeps workers in one process and reuses imported Lean environment data, so repeated Mathlib import cost is paid mainly once instead of once per worker.
+
+## Tool Signatures and Examples
+
+Call format (MCP):
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "lean_goal",
+    "arguments": {
+      "file_path": "/abs/path/to/File.lean",
+      "line": 10
+    }
+  }
+}
+```
+
+Each row includes signature + one example.  
+Author: `Lean Tools MCP Contributors` (project-maintained signatures)  
+Contact: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`  
+License: `MIT`
+
+| Tool | Signature | Author | License | Example `arguments` |
+|---|---|---|---|---|
+| `lean_goal` | `lean_goal(file_path, line, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":120,"column":17}` |
+| `lean_term_goal` | `lean_term_goal(file_path, line, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":120}` |
+| `lean_diagnostic_messages` | `lean_diagnostic_messages(file_path, start_line?, end_line?, severity?, declaration_name?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":1,"end_line":200}` |
+| `lean_hover_info` | `lean_hover_info(file_path, line, column)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":18,"column":9}` |
+| `lean_completions` | `lean_completions(file_path, line, column, max_completions?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":34,"column":12,"max_completions":20}` |
+| `lean_file_outline` | `lean_file_outline(file_path)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean"}` |
+| `lean_file_contents` | `lean_file_contents(file_path, start_line?, end_line?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":1,"end_line":80}` |
+| `lean_declaration_file` | `lean_declaration_file(file_path, symbol)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","symbol":"Nat.add_assoc"}` |
+| `lean_local_search` | `lean_local_search(file_path, query, limit?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","query":"simp","limit":10}` |
+| `lean_run_code` | `lean_run_code(code)` | Lean Tools MCP Contributors | MIT | `{"code":"import Mathlib\\n#check Nat.succ"}` |
+| `lean_multi_attempt` | `lean_multi_attempt(file_path, line, tactics, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":88,"tactics":["simp","aesop","linarith"]}` |
+| `lean_apply_patch` | `lean_apply_patch(file_path, new_content, start_line?, end_line?, search?, occurrence?, context_lines?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":20,"end_line":22,"new_content":"  simp"}` |
+| `lean_leansearch` | `lean_leansearch(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"sum of two even numbers is even","num_results":5}` |
+| `lean_loogle` | `lean_loogle(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"(?a -> ?b) -> List ?a -> List ?b","num_results":8}` |
+| `lean_leanfinder` | `lean_leanfinder(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"commutativity of addition on natural numbers","num_results":5}` |
+| `lean_state_search` | `lean_state_search(file_path, line, column, num_results?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":102,"column":7,"num_results":5}` |
+| `lean_hammer_premise` | `lean_hammer_premise(file_path, line, column, num_results?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":102,"column":7,"num_results":20}` |
+| `lean_unified_search` | `lean_unified_search(query, num_results?, backends?)` | Lean Tools MCP Contributors | MIT | `{"query":"Cauchy-Schwarz inequality","num_results":5,"backends":["leansearch","loogle","leanfinder"]}` |
+| `lean_llm_query` | `lean_llm_query(prompt, model?, temperature?)` | Lean Tools MCP Contributors | MIT | `{"prompt":"Translate this statement into Lean 4:","model":"deepseek-chat","temperature":0.0}` |
+| `lean_havelet_extract` | `lean_havelet_extract(file_path, prefix?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","prefix":"Extracted"}` |
+| `lean_analyze_deps` | `lean_analyze_deps(file_path)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean"}` |
+| `lean_export_decls` | `lean_export_decls(modules, output_path?)` | Lean Tools MCP Contributors | MIT | `{"modules":["Mathlib.Topology","Mathlib.Algebra"],"output_path":"/tmp/decls.jsonl"}` |
 
 ## Quick Start
 
-### Installation
+### Prerequisites
+
+- Python >= 3.11
+- Lean 4 via [elan](https://github.com/leanprover/elan)
+- A Lean project containing `lakefile.lean`
+
+### Install
 
 ```bash
-# Clone and install
 git clone <this-repo>
 cd lean-tools-mcp
 pip install -e ".[sse,dev]"
 ```
 
-### Prerequisites
-
-- **Python** >= 3.11
-- **Lean 4** installed via [elan](https://github.com/leanprover/elan)
-- A Lean project with `lakefile.lean` (for LSP to work properly)
-
-### Usage — stdio (for Cursor / Claude Desktop)
+### Run (stdio)
 
 ```bash
-# Run against a Lean project
 lean-tools-mcp --project-root /path/to/lean-project
-
-# With debug logging
-lean-tools-mcp --project-root /path/to/lean-project -v
-
-# With LLM config
-lean-tools-mcp --project-root /path/to/lean-project --config /path/to/config.json
 ```
 
-### Usage — SSE (remote service)
+### Run (SSE)
 
 ```bash
-# Start SSE server
-lean-tools-mcp --transport sse --port 8080 --project-root /path/to/lean-project
-
-# Bind to all interfaces (for remote access)
 lean-tools-mcp --transport sse --host 0.0.0.0 --port 8080 --project-root /path/to/lean-project
 ```
 
-Once running, endpoints are:
-- `GET /sse` — SSE event stream (MCP clients connect here)
-- `POST /messages` — JSON-RPC message endpoint
-- `GET /health` — health check / status
+SSE endpoints:
 
-### Cursor IDE Configuration
+- `GET /sse`
+- `POST /messages`
+- `GET /health`
 
-Add to your Cursor MCP settings (`.cursor/mcp.json`):
+### Key flags
 
-```json
-{
-  "mcpServers": {
-    "lean-tools": {
-      "command": "lean-tools-mcp",
-      "args": ["--project-root", "/path/to/lean-project"]
-    }
-  }
-}
-```
+- `--project-root PATH`
+- `--pool-size N`
+- `--inprocess` (memory-optimized mode for heavy imports)
+- `--transport stdio|sse`
+- `--config PATH`
+- `-v, --verbose`
 
-### Claude Desktop Configuration
+## Local Archive Note
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+The previous full README has been archived locally at:
 
-```json
-{
-  "mcpServers": {
-    "lean-tools": {
-      "command": "lean-tools-mcp",
-      "args": ["--project-root", "/path/to/lean-project"]
-    }
-  }
-}
-```
+- `docs/_private/README_original_2026-03-02.md`
 
-## Tools Reference
+This path is intentionally ignored by Git and not intended for GitHub publishing.
 
-### Proof State & Diagnostics
-
-| Tool | Description |
-|------|-------------|
-| `lean_goal` | Get proof goals at a position (most important tool) |
-| `lean_term_goal` | Get expected type at a position |
-| `lean_diagnostic_messages` | Get compiler errors, warnings, infos |
-| `lean_hover_info` | Get type signature and docs for a symbol |
-| `lean_completions` | Get IDE autocompletions |
-
-### File Operations
-
-| Tool | Description |
-|------|-------------|
-| `lean_file_outline` | Get imports and declarations with type signatures |
-| `lean_file_contents` | Get file contents with optional line numbers |
-| `lean_declaration_file` | Find where a symbol is declared |
-| `lean_local_search` | Fast local search for declaration names |
-
-### Code Execution
-
-| Tool | Description |
-|------|-------------|
-| `lean_run_code` | Run self-contained Lean code snippets |
-| `lean_multi_attempt` | Try multiple tactics without modifying files |
-
-### External Search (Mathlib)
-
-| Tool | Description |
-|------|-------------|
-| `lean_leansearch` | Natural language search via leansearch.net |
-| `lean_loogle` | Type signature search via loogle.lean-lang.org |
-| `lean_leanfinder` | Semantic/conceptual search via Lean Finder |
-| `lean_state_search` | Find lemmas to close a goal |
-| `lean_hammer_premise` | Get premise suggestions for simp/aesop |
-| `lean_unified_search` | Parallel multi-backend search with deduplication |
-
-### LLM Integration
-
-| Tool | Description |
-|------|-------------|
-| `lean_llm_query` | Query LLM for Lean 4 / math reasoning |
-
-### Lean Metaprogramming
-
-| Tool | Description |
-|------|-------------|
-| `lean_havelet_extract` | Extract have/let bindings as top-level declarations |
-| `lean_analyze_deps` | Analyze theorem dependencies |
-| `lean_export_decls` | Export module declarations to JSONL |
-
-## Configuration
-
-### CLI Arguments
-
-```
---project-root PATH    Root directory of the Lean project (default: cwd)
---lean-path PATH       Path to the lean executable (default: auto-detect)
---pool-size N          Number of LSP server instances (default: 2)
---transport MODE       Transport mode: stdio or sse (default: stdio)
---host HOST            SSE server host (default: 127.0.0.1)
---port PORT            SSE server port (default: 8080)
---config PATH          Path to config.json for LLM providers
--v, --verbose          Enable debug logging
-```
-
-### Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `LEAN_EXECUTABLE` | Path to the lean binary | `lean` |
-| `LEAN_LSP_POOL_SIZE` | Number of LSP instances | `2` |
-| `LEAN_LSP_TIMEOUT` | LSP request timeout (seconds) | `60` |
-| `LLM_DEFAULT_MODEL` | Default LLM model name | `deepseek-chat` |
-| `MCP_TRANSPORT` | Transport mode | `stdio` |
-| `MCP_SSE_HOST` | SSE server host | `127.0.0.1` |
-| `MCP_SSE_PORT` | SSE server port | `8080` |
-
-### LLM Provider Config (`config.json`)
-
-```json
-{
-  "api": {
-    "deepseek": [
-      {"api_key": "sk-...", "api_base": "https://api.deepseek.com"}
-    ],
-    "openai": [
-      {"api_key": "sk-...", "api_base": "https://api.openai.com/v1"}
-    ]
-  }
-}
-```
-
-Multiple entries per provider enable **key rotation** for higher throughput. The LLM client automatically falls back across providers if one fails.
-
-## Architecture
-
-```
-┌─────────────┐      ┌──────────────────────────────────────┐
-│  MCP Client │◄────►│         MCP Server (Python)          │
-│  (Cursor /  │      │                                      │
-│   Claude)   │      │  ┌──────────┐  ┌─────────────────┐  │
-│             │      │  │ Tool     │  │ LSP Pool        │  │
-│  stdio/SSE  │      │  │ Registry │  │ ┌─────────────┐ │  │
-│             │      │  │          │  │ │lean --server│ │  │
-└─────────────┘      │  │ 21 tools │  │ │lean --server│ │  │
-                     │  │          │  │ │     ...     │ │  │
-                     │  └──────────┘  │ └─────────────┘ │  │
-                     │                └─────────────────┘  │
-                     │  ┌──────────┐  ┌─────────────────┐  │
-                     │  │ Search   │  │ LLM Client      │  │
-                     │  │ Clients  │  │ (multi-provider) │  │
-                     │  │ + Rate   │  │ + key rotation   │  │
-                     │  │ Limiter  │  │ + fallback       │  │
-                     │  └──────────┘  └─────────────────┘  │
-                     │  ┌──────────────────────────────┐   │
-                     │  │ Lean Meta Tools (CLI)        │   │
-                     │  │ havelet_generator            │   │
-                     │  │ definition_tool              │   │
-                     │  │ decl_exporter                │   │
-                     │  └──────────────────────────────┘   │
-                     └──────────────────────────────────────┘
-```
-
-## Project Structure
-
-```
-lean-tools-mcp/
-├── src/lean_tools_mcp/
-│   ├── server.py              # Main MCP server (tool registry, transport)
-│   ├── config.py              # Configuration management
-│   ├── lsp/
-│   │   ├── pool.py            # LSP connection pool
-│   │   ├── client.py          # Single LSP client
-│   │   ├── protocol.py        # JSON-RPC 2.0 transport
-│   │   ├── file_manager.py    # Temporary file management
-│   │   └── types.py           # LSP type definitions
-│   ├── tools/
-│   │   ├── goal.py            # lean_goal, lean_term_goal
-│   │   ├── diagnostics.py     # lean_diagnostic_messages
-│   │   ├── hover.py           # lean_hover_info
-│   │   ├── completions.py     # lean_completions
-│   │   ├── file_ops.py        # file_outline, file_contents, declaration_file, local_search
-│   │   ├── run_code.py        # lean_run_code
-│   │   ├── multi_attempt.py   # lean_multi_attempt
-│   │   ├── search.py          # External search tool wrappers
-│   │   ├── unified_search.py  # Parallel multi-backend search
-│   │   ├── llm_tools.py       # lean_llm_query
-│   │   └── lean_meta.py       # Lean metaprogramming tool wrappers
-│   ├── clients/
-│   │   ├── rate_limiter.py    # Sliding window rate limiter
-│   │   └── search.py          # HTTP clients for external APIs
-│   ├── llm/
-│   │   └── client.py          # Multi-provider LLM client
-│   └── utils/
-│       └── version.py         # Version detection
-├── lean/                       # Lean metaprogramming tools
-│   ├── lakefile.lean
-│   ├── lean-toolchain
-│   └── src/
-│       ├── HaveletGenerator/  # have/let extraction
-│       ├── DeclExporter/      # Declaration export
-│       ├── DefinitionTool/    # Dependency analysis
-│       └── StateExpr/         # Proof state expression tree
-├── tests/
-│   ├── test_server.py
-│   ├── test_config.py
-│   ├── test_protocol.py
-│   ├── test_sse.py
-│   ├── test_rate_limiter.py
-│   ├── test_search.py
-│   ├── test_llm_client.py
-│   ├── test_unified_search.py
-│   ├── test_lean_meta.py
-│   └── test_integration.py
-└── pyproject.toml
-```
-
-## Development
-
-### Run Tests
-
-```bash
-# Unit tests (no Lean needed)
-python -m pytest tests/ -v --ignore=tests/test_integration.py --ignore=tests/test_sse.py
-
-# Integration tests (requires Lean + network)
-python -m pytest tests/test_integration.py -v -s
-
-# SSE transport tests
-python -m pytest tests/test_sse.py -v -s
-
-# All tests
-python -m pytest tests/ -v -s
-```
-
-### Build Lean Meta Tools
-
-```bash
-cd lean
-lake update
-lake build havelet_generator
-lake build decl_exporter
-lake build definition_tool
-```
 ## License
 
 MIT
+
+Project contacts: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
