@@ -24,7 +24,25 @@ Compared with existing Lean MCP servers, this project emphasizes:
 | LLM / metaprogramming | `lean_llm_query`, `lean_havelet_extract`, `lean_analyze_deps`, `lean_export_decls` |
 
 
-## Usage
+## Tool Signatures and Examples
+
+Call format (MCP):
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "lean_goal",
+    "arguments": {
+      "file_path": "/abs/path/to/File.lean",
+      "line": 10
+    }
+  }
+}
+```
+
+Each row includes signature + one example.  
+
 | Tool | Signature | Author | License | Example `arguments` |
 |---|---|---|---|---|
 | `lean_goal` | `lean_goal(file_path, line, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":120,"column":17}` |
@@ -51,9 +69,11 @@ Compared with existing Lean MCP servers, this project emphasizes:
 | `lean_export_decls` | `lean_export_decls(modules, output_path?)` | Lean Tools MCP Contributors | MIT | `{"modules":["Mathlib.Topology","Mathlib.Algebra"],"output_path":"/tmp/decls.jsonl"}` |
 
 
+## Comparison with other MCP tools
 
-
-## Feature Coverage Matrix
+- [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp)
+- [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp)
+- [LeanTool](https://github.com/GasStationManager/LeanTool)
 
 | Tool | lean-tools-mcp | lean-lsp-mcp | lean-docker-mcp | LeanTool |
 |---|---|---|---|---|
@@ -89,6 +109,59 @@ Compared with existing Lean MCP servers, this project emphasizes:
 | `execute-lean-persistent` |  |  | ✅ |  |
 | `cleanup-session` |  |  | ✅ |  |
 | `check_lean` |  |  |  | ✅ |
+
+
+
+## Quick Start
+
+### Prerequisites
+
+- Python >= 3.11
+- Lean 4 via [elan](https://github.com/leanprover/elan)
+- A Lean project containing `lakefile.lean`
+
+### Install
+
+```bash
+git clone <this-repo>
+cd lean-tools-mcp
+pip install -e ".[sse,dev]"
+```
+
+### Run (stdio)
+
+```bash
+lean-tools-mcp --project-root /path/to/lean-project
+```
+
+### Run (SSE)
+
+```bash
+lean-tools-mcp --transport sse --host 0.0.0.0 --port 8080 --project-root /path/to/lean-project
+```
+
+SSE endpoints:
+
+- `GET /sse`
+- `POST /messages`
+- `GET /health`
+
+### Key flags
+
+- `--project-root PATH`
+- `--pool-size N`
+- `--inprocess` (memory-optimized mode for heavy imports)
+- `--transport stdio|sse`
+- `--config PATH`
+- `-v, --verbose`
+
+## Local Archive Note
+
+The previous full README has been archived locally at:
+
+- `docs/_private/README_original_2026-03-02.md`
+
+This path is intentionally ignored by Git and not intended for GitHub publishing.
 
 
 ## Memory Optimization Setup (Read This First)
@@ -216,11 +289,6 @@ The auto-detect flow reads the project's `lean-toolchain` and looks for:
 3. If memory does not drop, first check version mismatch between `lean-toolchain` and patched binary.
 
 
-## Related Lean MCP Tools
-
-- [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp)
-- [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp)
-- [LeanTool](https://github.com/GasStationManager/LeanTool)
 
 Data below is organized from project docs/source snapshots checked on 2026-03-02.
 
@@ -242,80 +310,8 @@ Optimization scope:
 - In-process optimization is implemented for patched Lean `v4.27.x` / `v4.28.x` / `v4.29.x` builds.
 - Published Mathlib process-vs-in-process measurements in this README are currently complete for Lean `4.29.0` and patched `4.29.0-rc2` builds (commit `83e54b65`).
 
-## Tool Signatures and Examples
-
-Call format (MCP):
-
-```json
-{
-  "method": "tools/call",
-  "params": {
-    "name": "lean_goal",
-    "arguments": {
-      "file_path": "/abs/path/to/File.lean",
-      "line": 10
-    }
-  }
-}
-```
-
-Each row includes signature + one example.  
 
 
-
-## Quick Start
-
-### Prerequisites
-
-- Python >= 3.11
-- Lean 4 via [elan](https://github.com/leanprover/elan)
-- A Lean project containing `lakefile.lean`
-
-### Install
-
-```bash
-git clone <this-repo>
-cd lean-tools-mcp
-pip install -e ".[sse,dev]"
-```
-
-### Run (stdio)
-
-```bash
-lean-tools-mcp --project-root /path/to/lean-project
-```
-
-### Run (SSE)
-
-```bash
-lean-tools-mcp --transport sse --host 0.0.0.0 --port 8080 --project-root /path/to/lean-project
-```
-
-SSE endpoints:
-
-- `GET /sse`
-- `POST /messages`
-- `GET /health`
-
-### Key flags
-
-- `--project-root PATH`
-- `--pool-size N`
-- `--inprocess` (memory-optimized mode for heavy imports)
-- `--transport stdio|sse`
-- `--config PATH`
-- `-v, --verbose`
-
-## Local Archive Note
-
-The previous full README has been archived locally at:
-
-- `docs/_private/README_original_2026-03-02.md`
-
-This path is intentionally ignored by Git and not intended for GitHub publishing.
-
-
-Maintainer contacts: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
 
 ## The Authors
 We hope that the package is useful for your application. If you have any bug reports or comments, please feel free to email one of the toolbox authors:
