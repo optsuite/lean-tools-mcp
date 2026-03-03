@@ -7,7 +7,89 @@ Lean Tools MCP is a Lean 4 MCP server focused on two engineering goals:
 
 The core strategy is an LSP pool plus optional in-process workers, so high-concurrency requests stay responsive while memory remains bounded.
 
-Maintainer contacts: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
+## Why This Project
+
+Compared with existing Lean MCP servers, this project emphasizes:
+
+- High-concurrency LSP dispatch with pooled `lean --server` workers.
+- Memory optimization path for Mathlib-heavy workloads (`--inprocess`).
+- A broader integrated toolset (LSP + search + LLM + Lean metaprogramming + patching).
+
+| Category | Tool union |
+|---|---|
+| Proof state / diagnostics | `lean_goal`, `lean_term_goal`, `lean_diagnostic_messages`, `lean_hover_info`, `lean_completions`, `lean_code_actions`, `lean_get_widgets`, `lean_get_widget_source`, `lean_verify`, `check_lean` |
+| File / project operations | `lean_file_outline`, `lean_file_contents`, `lean_declaration_file`, `lean_local_search`, `lean_build`, `lean_apply_patch`, `execute-lean`, `execute-lean-persistent`, `cleanup-session` |
+| Code execution / profiling | `lean_run_code`, `lean_multi_attempt`, `lean_profile_proof` |
+| Mathlib search | `lean_leansearch`, `lean_loogle`, `lean_leanfinder`, `lean_state_search`, `lean_hammer_premise`, `lean_unified_search` |
+| LLM / metaprogramming | `lean_llm_query`, `lean_havelet_extract`, `lean_analyze_deps`, `lean_export_decls` |
+
+
+## Usage
+| Tool | Signature | Author | License | Example `arguments` |
+|---|---|---|---|---|
+| `lean_goal` | `lean_goal(file_path, line, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":120,"column":17}` |
+| `lean_term_goal` | `lean_term_goal(file_path, line, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":120}` |
+| `lean_diagnostic_messages` | `lean_diagnostic_messages(file_path, start_line?, end_line?, severity?, declaration_name?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":1,"end_line":200}` |
+| `lean_hover_info` | `lean_hover_info(file_path, line, column)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":18,"column":9}` |
+| `lean_completions` | `lean_completions(file_path, line, column, max_completions?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":34,"column":12,"max_completions":20}` |
+| `lean_file_outline` | `lean_file_outline(file_path)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean"}` |
+| `lean_file_contents` | `lean_file_contents(file_path, start_line?, end_line?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":1,"end_line":80}` |
+| `lean_declaration_file` | `lean_declaration_file(file_path, symbol)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","symbol":"Nat.add_assoc"}` |
+| `lean_local_search` | `lean_local_search(file_path, query, limit?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","query":"simp","limit":10}` |
+| `lean_run_code` | `lean_run_code(code)` | Lean Tools MCP Contributors | MIT | `{"code":"import Mathlib\\n#check Nat.succ"}` |
+| `lean_multi_attempt` | `lean_multi_attempt(file_path, line, tactics, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":88,"tactics":["simp","aesop","linarith"]}` |
+| `lean_apply_patch` | `lean_apply_patch(file_path, new_content, start_line?, end_line?, search?, occurrence?, context_lines?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":20,"end_line":22,"new_content":"  simp"}` |
+| `lean_leansearch` | `lean_leansearch(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"sum of two even numbers is even","num_results":5}` |
+| `lean_loogle` | `lean_loogle(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"(?a -> ?b) -> List ?a -> List ?b","num_results":8}` |
+| `lean_leanfinder` | `lean_leanfinder(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"commutativity of addition on natural numbers","num_results":5}` |
+| `lean_state_search` | `lean_state_search(file_path, line, column, num_results?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":102,"column":7,"num_results":5}` |
+| `lean_hammer_premise` | `lean_hammer_premise(file_path, line, column, num_results?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":102,"column":7,"num_results":20}` |
+| `lean_unified_search` | `lean_unified_search(query, num_results?, backends?)` | Lean Tools MCP Contributors | MIT | `{"query":"Cauchy-Schwarz inequality","num_results":5,"backends":["leansearch","loogle","leanfinder"]}` |
+| `lean_llm_query` | `lean_llm_query(prompt, model?, temperature?)` | Lean Tools MCP Contributors | MIT | `{"prompt":"Translate this statement into Lean 4:","model":"deepseek-chat","temperature":0.0}` |
+| `lean_havelet_extract` | `lean_havelet_extract(file_path, prefix?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","prefix":"Extracted"}` |
+| `lean_analyze_deps` | `lean_analyze_deps(file_path)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean"}` |
+| `lean_export_decls` | `lean_export_decls(modules, output_path?)` | Lean Tools MCP Contributors | MIT | `{"modules":["Mathlib.Topology","Mathlib.Algebra"],"output_path":"/tmp/decls.jsonl"}` |
+
+
+
+
+## Feature Coverage Matrix
+
+| Tool | lean-tools-mcp | lean-lsp-mcp | lean-docker-mcp | LeanTool |
+|---|---|---|---|---|
+| `lean_goal` | ✅ | ✅ |  |  |
+| `lean_term_goal` | ✅ | ✅ |  |  |
+| `lean_diagnostic_messages` | ✅ | ✅ |  |  |
+| `lean_hover_info` | ✅ | ✅ |  |  |
+| `lean_completions` | ✅ | ✅ |  |  |
+| `lean_file_outline` | ✅ | ✅ |  |  |
+| `lean_file_contents` | ✅ |  |  |  |
+| `lean_declaration_file` | ✅ | ✅ |  |  |
+| `lean_local_search` | ✅ | ✅ |  |  |
+| `lean_run_code` | ✅ | ✅ |  |  |
+| `lean_multi_attempt` | ✅ | ✅ |  |  |
+| `lean_apply_patch` | ✅ |  |  |  |
+| `lean_code_actions` |  | ✅ |  |  |
+| `lean_get_widgets` |  | ✅ |  |  |
+| `lean_get_widget_source` |  | ✅ |  |  |
+| `lean_profile_proof` |  | ✅ |  |  |
+| `lean_verify` |  | ✅ |  |  |
+| `lean_build` |  | ✅ |  |  |
+| `lean_leansearch` | ✅ | ✅ |  |  |
+| `lean_loogle` | ✅ | ✅ |  |  |
+| `lean_leanfinder` | ✅ | ✅ |  |  |
+| `lean_state_search` | ✅ | ✅ |  |  |
+| `lean_hammer_premise` | ✅ | ✅ |  |  |
+| `lean_unified_search` | ✅ |  |  |  |
+| `lean_llm_query` | ✅ |  |  |  |
+| `lean_havelet_extract` | ✅ |  |  |  |
+| `lean_analyze_deps` | ✅ |  |  |  |
+| `lean_export_decls` | ✅ |  |  |  |
+| `execute-lean` |  |  | ✅ |  |
+| `execute-lean-persistent` |  |  | ✅ |  |
+| `cleanup-session` |  |  | ✅ |  |
+| `check_lean` |  |  |  | ✅ |
+
 
 ## Memory Optimization Setup (Read This First)
 
@@ -133,13 +215,6 @@ The auto-detect flow reads the project's `lean-toolchain` and looks for:
 2. Startup logs should show the expected patched Lean binary path/version.
 3. If memory does not drop, first check version mismatch between `lean-toolchain` and patched binary.
 
-## Why This Project
-
-Compared with existing Lean MCP servers, this project emphasizes:
-
-- High-concurrency LSP dispatch with pooled `lean --server` workers.
-- Memory optimization path for Mathlib-heavy workloads (`--inprocess`).
-- A broader integrated toolset (LSP + search + LLM + Lean metaprogramming + patching).
 
 ## Related Lean MCP Tools
 
@@ -149,52 +224,6 @@ Compared with existing Lean MCP servers, this project emphasizes:
 
 Data below is organized from project docs/source snapshots checked on 2026-03-02.
 
-## Tool Union (All Compared Projects)
-
-| Category | Tool union |
-|---|---|
-| Proof state / diagnostics | `lean_goal`, `lean_term_goal`, `lean_diagnostic_messages`, `lean_hover_info`, `lean_completions`, `lean_code_actions`, `lean_get_widgets`, `lean_get_widget_source`, `lean_verify`, `check_lean` |
-| File / project operations | `lean_file_outline`, `lean_file_contents`, `lean_declaration_file`, `lean_local_search`, `lean_build`, `lean_apply_patch`, `execute-lean`, `execute-lean-persistent`, `cleanup-session` |
-| Code execution / profiling | `lean_run_code`, `lean_multi_attempt`, `lean_profile_proof` |
-| Mathlib search | `lean_leansearch`, `lean_loogle`, `lean_leanfinder`, `lean_state_search`, `lean_hammer_premise`, `lean_unified_search` |
-| LLM / metaprogramming | `lean_llm_query`, `lean_havelet_extract`, `lean_analyze_deps`, `lean_export_decls` |
-
-## Feature Coverage Matrix
-
-| Tool | lean-tools-mcp | lean-lsp-mcp | lean-docker-mcp | LeanTool |
-|---|---|---|---|---|
-| `lean_goal` | ✅ | ✅ |  |  |
-| `lean_term_goal` | ✅ | ✅ |  |  |
-| `lean_diagnostic_messages` | ✅ | ✅ |  |  |
-| `lean_hover_info` | ✅ | ✅ |  |  |
-| `lean_completions` | ✅ | ✅ |  |  |
-| `lean_file_outline` | ✅ | ✅ |  |  |
-| `lean_file_contents` | ✅ |  |  |  |
-| `lean_declaration_file` | ✅ | ✅ |  |  |
-| `lean_local_search` | ✅ | ✅ |  |  |
-| `lean_run_code` | ✅ | ✅ |  |  |
-| `lean_multi_attempt` | ✅ | ✅ |  |  |
-| `lean_apply_patch` | ✅ |  |  |  |
-| `lean_code_actions` |  | ✅ |  |  |
-| `lean_get_widgets` |  | ✅ |  |  |
-| `lean_get_widget_source` |  | ✅ |  |  |
-| `lean_profile_proof` |  | ✅ |  |  |
-| `lean_verify` |  | ✅ |  |  |
-| `lean_build` |  | ✅ |  |  |
-| `lean_leansearch` | ✅ | ✅ |  |  |
-| `lean_loogle` | ✅ | ✅ |  |  |
-| `lean_leanfinder` | ✅ | ✅ |  |  |
-| `lean_state_search` | ✅ | ✅ |  |  |
-| `lean_hammer_premise` | ✅ | ✅ |  |  |
-| `lean_unified_search` | ✅ |  |  |  |
-| `lean_llm_query` | ✅ |  |  |  |
-| `lean_havelet_extract` | ✅ |  |  |  |
-| `lean_analyze_deps` | ✅ |  |  |  |
-| `lean_export_decls` | ✅ |  |  |  |
-| `execute-lean` |  |  | ✅ |  |
-| `execute-lean-persistent` |  |  | ✅ |  |
-| `cleanup-session` |  |  | ✅ |  |
-| `check_lean` |  |  |  | ✅ |
 
 ## Mathlib Memory Savings by Version / Scenario
 
@@ -231,34 +260,8 @@ Call format (MCP):
 ```
 
 Each row includes signature + one example.  
-Author: `Lean Tools MCP Contributors` (project-maintained signatures)  
-Contact: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`  
-License: `MIT`
 
-| Tool | Signature | Author | License | Example `arguments` |
-|---|---|---|---|---|
-| `lean_goal` | `lean_goal(file_path, line, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":120,"column":17}` |
-| `lean_term_goal` | `lean_term_goal(file_path, line, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":120}` |
-| `lean_diagnostic_messages` | `lean_diagnostic_messages(file_path, start_line?, end_line?, severity?, declaration_name?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":1,"end_line":200}` |
-| `lean_hover_info` | `lean_hover_info(file_path, line, column)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":18,"column":9}` |
-| `lean_completions` | `lean_completions(file_path, line, column, max_completions?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":34,"column":12,"max_completions":20}` |
-| `lean_file_outline` | `lean_file_outline(file_path)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean"}` |
-| `lean_file_contents` | `lean_file_contents(file_path, start_line?, end_line?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":1,"end_line":80}` |
-| `lean_declaration_file` | `lean_declaration_file(file_path, symbol)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","symbol":"Nat.add_assoc"}` |
-| `lean_local_search` | `lean_local_search(file_path, query, limit?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","query":"simp","limit":10}` |
-| `lean_run_code` | `lean_run_code(code)` | Lean Tools MCP Contributors | MIT | `{"code":"import Mathlib\\n#check Nat.succ"}` |
-| `lean_multi_attempt` | `lean_multi_attempt(file_path, line, tactics, column?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":88,"tactics":["simp","aesop","linarith"]}` |
-| `lean_apply_patch` | `lean_apply_patch(file_path, new_content, start_line?, end_line?, search?, occurrence?, context_lines?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","start_line":20,"end_line":22,"new_content":"  simp"}` |
-| `lean_leansearch` | `lean_leansearch(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"sum of two even numbers is even","num_results":5}` |
-| `lean_loogle` | `lean_loogle(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"(?a -> ?b) -> List ?a -> List ?b","num_results":8}` |
-| `lean_leanfinder` | `lean_leanfinder(query, num_results?)` | Lean Tools MCP Contributors | MIT | `{"query":"commutativity of addition on natural numbers","num_results":5}` |
-| `lean_state_search` | `lean_state_search(file_path, line, column, num_results?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":102,"column":7,"num_results":5}` |
-| `lean_hammer_premise` | `lean_hammer_premise(file_path, line, column, num_results?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","line":102,"column":7,"num_results":20}` |
-| `lean_unified_search` | `lean_unified_search(query, num_results?, backends?)` | Lean Tools MCP Contributors | MIT | `{"query":"Cauchy-Schwarz inequality","num_results":5,"backends":["leansearch","loogle","leanfinder"]}` |
-| `lean_llm_query` | `lean_llm_query(prompt, model?, temperature?)` | Lean Tools MCP Contributors | MIT | `{"prompt":"Translate this statement into Lean 4:","model":"deepseek-chat","temperature":0.0}` |
-| `lean_havelet_extract` | `lean_havelet_extract(file_path, prefix?)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean","prefix":"Extracted"}` |
-| `lean_analyze_deps` | `lean_analyze_deps(file_path)` | Lean Tools MCP Contributors | MIT | `{"file_path":"/abs/path/to/Foo.lean"}` |
-| `lean_export_decls` | `lean_export_decls(modules, output_path?)` | Lean Tools MCP Contributors | MIT | `{"modules":["Mathlib.Topology","Mathlib.Algebra"],"output_path":"/tmp/decls.jsonl"}` |
+
 
 ## Quick Start
 
@@ -310,6 +313,17 @@ The previous full README has been archived locally at:
 - `docs/_private/README_original_2026-03-02.md`
 
 This path is intentionally ignored by Git and not intended for GitHub publishing.
+
+
+Maintainer contacts: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
+
+## The Authors
+We hope that the package is useful for your application. If you have any bug reports or comments, please feel free to email one of the toolbox authors:
+- Ziyu Wang, School of Mathematical Sciences, Peking University, China (`wangziyu-edu@stu.pku.edu.cn`)
+- Zichen Wang, School of Mathematical Sciences, Peking University, China (`zichenwang25@stu.pku.edu.cn`)
+- Zaiwen Wen, Beijing International Center for Mathematical Research, Peking University, China (`wenzw@pku.edu.cn`)
+
+## Citation
 
 ## License
 
