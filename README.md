@@ -13,6 +13,77 @@ Maintainer contacts: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
 
 If you want the memory-saving behavior, `--inprocess` by itself is not enough. You also need a **patched Lean binary** (Phase 2 changes) and a correct Lean project root.
 
+### Download + One-Click Install
+
+```bash
+git clone https://github.com/optsuite/lean-tools-mcp.git
+cd lean-tools-mcp
+bash scripts/one_click_setup.sh
+```
+
+Default behavior of `scripts/one_click_setup.sh`:
+
+- Resolve Lean `v4.29.0` to build tag `v4.29.0-rc2` (upstream available tag for commit `83e54b65`).
+- Build patched Lean and install it under `~/lean-builds/v4.29.0-rc2/bin/lean`.
+- Create/update project `~/lean-mcp-v429` with matching `lean-toolchain` and pinned Mathlib revision (`v4.29.0-rc2`).
+- Run `lake update` and `lake exe cache get`.
+- Install this MCP package (`pip install -e ".[sse,dev]"`).
+- Add MCP entries to Codex and Claude config files (Cursor optional).
+
+Useful options (aligned with script flags):
+
+```bash
+# Use existing patched lean, skip pip install, and also write Cursor config
+bash scripts/one_click_setup.sh \
+  --project-root /abs/path/to/my-lean-project \
+  --lean-path /abs/path/to/patched/lean \
+  --no-install-python \
+  --install-cursor
+```
+
+### Add MCP in Codex / Claude
+
+Auto mode:
+
+- By default, one-click setup writes:
+- Codex: `~/.codex/config.toml`
+- Claude: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Manual mode (if you prefer not to let the script edit config):
+
+```bash
+bash scripts/one_click_setup.sh --no-install-codex --no-install-claude
+```
+
+1. Codex (`~/.codex/config.toml`)
+
+```toml
+[mcp_servers.lean-tools-mcp]
+command = "lean-tools-mcp"
+args = [
+  "--project-root", "/abs/path/to/your/lean-project",
+  "--inprocess",
+  "--lean-path", "/abs/path/to/patched/lean"
+]
+```
+
+2. Claude (`~/Library/Application Support/Claude/claude_desktop_config.json`)
+
+```json
+{
+  "mcpServers": {
+    "lean-tools-mcp": {
+      "command": "lean-tools-mcp",
+      "args": [
+        "--project-root", "/abs/path/to/your/lean-project",
+        "--inprocess",
+        "--lean-path", "/abs/path/to/patched/lean"
+      ]
+    }
+  }
+}
+```
+
 ### Requirements
 
 1. Patched Lean build is required.
