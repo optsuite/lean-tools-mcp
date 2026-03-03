@@ -9,6 +9,59 @@ The core strategy is an LSP pool plus optional in-process workers, so high-concu
 
 Maintainer contacts: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
 
+## Memory Optimization Setup (Read This First)
+
+If you want the memory-saving behavior, `--inprocess` by itself is not enough. You also need a **patched Lean binary** (Phase 2 changes) and a correct Lean project root.
+
+### Requirements
+
+1. Patched Lean build is required.
+   Use this repo's `scripts/build_lean.py`; supported patch families are `v4.27.x`, `v4.28.x`, and `v4.29.x`.
+2. Lean version must match your target project's `lean-toolchain`.
+   Example: if the project uses `v4.29.0-rc2`, build and run the patched `v4.29.0-rc2` binary.
+3. `--project-root` must point to the Lean project root.
+   It should contain `lakefile.lean` and usually `lean-toolchain`.
+4. Mathlib projects should prepare dependencies before MCP startup.
+   Run `lake update` and `lake exe cache get` in the project root first.
+5. Tool `file_path` arguments should be absolute paths under that project root.
+
+### Install Patched Lean
+
+```bash
+# 1) Build patched Lean matching your project toolchain
+python scripts/build_lean.py --version v4.29.0-rc2 --output ~/lean-builds
+
+# 2) Verify binary version
+~/lean-builds/v4.29.0-rc2/bin/lean --version
+```
+
+### Start MCP with Memory Optimization (Recommended: Explicit `--lean-path`)
+
+```bash
+lean-tools-mcp \
+  --project-root /abs/path/to/your/lean-project \
+  --inprocess \
+  --lean-path ~/lean-builds/v4.29.0-rc2/bin/lean
+```
+
+### Alternative: Auto-Detect Patched Lean from `LEAN_BUILDS_DIR`
+
+```bash
+export LEAN_WORKER_INPROCESS=1
+export LEAN_BUILDS_DIR=~/lean-builds
+
+lean-tools-mcp --project-root /abs/path/to/your/lean-project
+```
+
+The auto-detect flow reads the project's `lean-toolchain` and looks for:
+`$LEAN_BUILDS_DIR/<version_tag>/bin/lean`
+
+### Quick Self-Check
+
+1. Startup logs should show `In-process worker mode enabled`.
+2. Startup logs should show the expected patched Lean binary path/version.
+3. If memory does not drop, first check version mismatch between `lean-toolchain` and patched binary.
+
 ## Why This Project
 
 Compared with existing Lean MCP servers, this project emphasizes:
@@ -80,10 +133,14 @@ Benchmark source files are under `docs/bench_memory_*.json`. Metric here is **pe
 |---|---:|---:|---:|---:|
 | 4.29.0 (commit `83e54b65`) | 3 files | 8507.1 MB | 3060.1 MB | 64.0% |
 | 4.29.0 (commit `83e54b65`) | 5 files | 13721.3 MB | 2934.9 MB | 78.6% |
-| 4.29.0-rc2 (commit `83e54b65`) | 3 files | 8547.0 MB | N/A | N/A |
-| 4.24.0-rc1 (commit `919e2972`) | 3 files | 7006.0 MB | N/A | N/A |
+| 4.29.0-rc2 patched build (reports `4.29.0`, commit `83e54b65`) | 3 files | 8577.7 MB | 3098.2 MB | 63.9% |
 
 Principle (brief): in-process mode keeps workers in one process and reuses imported Lean environment data, so repeated Mathlib import cost is paid mainly once instead of once per worker.
+
+Optimization scope:
+
+- In-process optimization is implemented for patched Lean `v4.27.x` / `v4.28.x` / `v4.29.x` builds.
+- Published Mathlib process-vs-in-process measurements in this README are currently complete for Lean `4.29.0` and patched `4.29.0-rc2` builds (commit `83e54b65`).
 
 ## Tool Signatures and Examples
 

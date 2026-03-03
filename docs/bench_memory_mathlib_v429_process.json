@@ -1,64 +1,64 @@
 {
-  "lean_version": "Lean (version 4.29.0-rc2, arm64-apple-darwin24.6.0, commit 83e54b65b65d1d3ce31d99d820a7bd5f3e219295, Release)",
+  "lean_version": "Lean (version 4.29.0, arm64-apple-darwin22.6.0, commit 83e54b65b65d1d3ce31d99d820a7bd5f3e219295, Release)",
   "project_root": "/Users/wzy/study/lean/mcp_test/test_mathlib_v430",
   "num_files": 3,
   "use_mathlib": true,
-  "elapsed_seconds": 248.0773511249572,
+  "elapsed_seconds": 248.38889841700438,
   "platform": "arm64 Darwin",
-  "timestamp": "2026-02-27 17:35:01",
+  "timestamp": "2026-03-03 10:42:24",
   "snapshots": [
     {
-      "timestamp": 2.0341342920437455,
+      "timestamp": 2.0335192090133205,
       "label": "after_init",
       "num_processes": 1,
-      "total_rss_mb": 198.7,
+      "total_rss_mb": 159.1,
       "per_process_rss_mb": [
-        198.7
+        159.1
       ]
     },
     {
-      "timestamp": 64.044313875027,
+      "timestamp": 64.14530350000132,
       "label": "after_file_0",
       "num_processes": 2,
-      "total_rss_mb": 2922.4,
+      "total_rss_mb": 3121.2,
       "per_process_rss_mb": [
-        90.1,
-        2832.3
+        278.3,
+        2842.9
       ]
     },
     {
-      "timestamp": 126.05638025002554,
+      "timestamp": 126.25019020901527,
       "label": "after_file_1",
       "num_processes": 3,
-      "total_rss_mb": 5769.4,
+      "total_rss_mb": 5770.7,
       "per_process_rss_mb": [
-        92.7,
-        2832.3,
-        2844.4
+        93.5,
+        2834.7,
+        2842.4
       ]
     },
     {
-      "timestamp": 188.06909366697073,
+      "timestamp": 188.37966045900248,
       "label": "after_file_2",
       "num_processes": 4,
-      "total_rss_mb": 8547.0,
+      "total_rss_mb": 8577.7,
       "per_process_rss_mb": [
-        94.0,
-        2765.2,
-        2844.4,
-        2843.4
+        95.3,
+        2798.3,
+        2842.4,
+        2841.6
       ]
     },
     {
-      "timestamp": 248.0773169999011,
+      "timestamp": 248.3888343340077,
       "label": "final",
       "num_processes": 4,
-      "total_rss_mb": 8547.0,
+      "total_rss_mb": 8577.7,
       "per_process_rss_mb": [
-        94.0,
-        2765.2,
-        2844.4,
-        2843.4
+        95.3,
+        2798.3,
+        2842.4,
+        2841.6
       ]
     }
   ]

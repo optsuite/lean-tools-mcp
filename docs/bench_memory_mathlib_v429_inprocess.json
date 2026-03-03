@@ -1,0 +1,56 @@
+{
+  "lean_version": "Lean (version 4.29.0, arm64-apple-darwin22.6.0, commit 83e54b65b65d1d3ce31d99d820a7bd5f3e219295, Release)",
+  "project_root": "/Users/wzy/study/lean/mcp_test/test_mathlib_v430_inp",
+  "num_files": 3,
+  "use_mathlib": true,
+  "elapsed_seconds": 248.37748645799002,
+  "platform": "arm64 Darwin",
+  "timestamp": "2026-03-03 10:47:37",
+  "snapshots": [
+    {
+      "timestamp": 2.0300524579943158,
+      "label": "after_init",
+      "num_processes": 1,
+      "total_rss_mb": 175.3,
+      "per_process_rss_mb": [
+        175.3
+      ]
+    },
+    {
+      "timestamp": 64.15508512497763,
+      "label": "after_file_0",
+      "num_processes": 1,
+      "total_rss_mb": 3073.5,
+      "per_process_rss_mb": [
+        3073.5
+      ]
+    },
+    {
+      "timestamp": 126.27112145797582,
+      "label": "after_file_1",
+      "num_processes": 1,
+      "total_rss_mb": 3086.0,
+      "per_process_rss_mb": [
+        3086.0
+      ]
+    },
+    {
+      "timestamp": 188.36872716600192,
+      "label": "after_file_2",
+      "num_processes": 1,
+      "total_rss_mb": 3098.2,
+      "per_process_rss_mb": [
+        3098.2
+      ]
+    },
+    {
+      "timestamp": 248.3774435829837,
+      "label": "final",
+      "num_processes": 1,
+      "total_rss_mb": 3098.2,
+      "per_process_rss_mb": [
+        3098.2
+      ]
+    }
+  ]
+}
