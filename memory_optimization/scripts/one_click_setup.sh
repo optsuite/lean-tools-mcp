@@ -16,7 +16,7 @@ This script can:
 4) Write MCP config entries for Codex / Claude / Cursor.
 
 Usage:
-  bash scripts/one_click_setup.sh [options]
+  bash memory_optimization/scripts/one_click_setup.sh [options]
 
 Options:
   --lean-version <ver>       Lean version input (default: v4.29.0)
@@ -151,7 +151,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+MEMORY_OPT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$MEMORY_OPT_ROOT/.." && pwd)"
 
 LEAN_VERSION_TAG="$(normalize_lean_tag "$LEAN_VERSION_INPUT")"
 LEAN_VERSION_NOTE="$LEAN_VERSION_TAG"
@@ -189,7 +190,7 @@ mkdir -p "$PROJECT_ROOT"
 
 if [[ "$DO_BUILD_LEAN" -eq 1 ]]; then
   echo "[1/6] Building patched Lean..."
-  "$PYTHON_BIN" "$REPO_ROOT/scripts/build_lean.py" \
+  "$PYTHON_BIN" "$MEMORY_OPT_ROOT/scripts/build_lean.py" \
     --version "$LEAN_VERSION_TAG" \
     --output "$LEAN_BUILDS_DIR" \
     --jobs "$JOBS"

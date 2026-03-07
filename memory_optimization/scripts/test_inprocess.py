@@ -16,7 +16,7 @@ Tests that `LEAN_WORKER_INPROCESS=1 lean --server` correctly handles:
 Also runs the same tests in process mode as a control.
 
 Usage:
-    python scripts/test_inprocess.py [--lean-bin /path/to/lean] [--project-root /path/to/project]
+    python memory_optimization/scripts/test_inprocess.py [--lean-bin /path/to/lean] [--project-root /path/to/project]
 """
 
 from __future__ import annotations

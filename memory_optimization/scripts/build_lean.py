@@ -7,11 +7,11 @@
 Build a modified Lean 4 binary with in-process worker support.
 
 Automatically downloads the Lean 4 source at a given version tag,
-applies the appropriate patches from patches/, and builds via cmake.
+applies the appropriate patches from memory_optimization/patches/, and builds via cmake.
 
 Usage:
-    python scripts/build_lean.py --version v4.28.0 --output ~/lean-builds/
-    python scripts/build_lean.py --version v4.29.0-rc2 --output ~/lean-builds/ --jobs 8
+    python memory_optimization/scripts/build_lean.py --version v4.28.0 --output ~/lean-builds/
+    python memory_optimization/scripts/build_lean.py --version v4.29.0-rc2 --output ~/lean-builds/ --jobs 8
 """
 
 from __future__ import annotations

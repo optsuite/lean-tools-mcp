@@ -10,9 +10,9 @@ Measures total memory (RSS) when opening N files in the same Lean server process
 Each FileWorker is a separate OS process, so we measure the entire process tree.
 
 Usage:
-    python scripts/bench_memory.py --project-root /path/to/lean/project [--num-files 5]
-    python scripts/bench_memory.py --project-root /path/to/lean/project --lean-bin /path/to/lean
-    python scripts/bench_memory.py --project-root /path/to/lean/project --use-mathlib
+    python memory_optimization/scripts/bench_memory.py --project-root /path/to/lean/project [--num-files 5]
+    python memory_optimization/scripts/bench_memory.py --project-root /path/to/lean/project --lean-bin /path/to/lean
+    python memory_optimization/scripts/bench_memory.py --project-root /path/to/lean/project --use-mathlib
 """
 
 from __future__ import annotations

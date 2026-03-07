@@ -26,8 +26,8 @@ htmlcov/
 .coverage
 
 # Lean build artifacts
-lean/.lake/
-lean/lake-packages/
+memory_optimization/lean/.lake/
+memory_optimization/lean/lake-packages/
 
 # OS
 .DS_Store
@@ -36,7 +36,8 @@ Thumbs.db
 # Secrets — never commit
 config.json
 .env
-lean/temp/
+memory_optimization/lean/temp/
 
 # Local docs (not shared to GitHub)
 docs/_private/
+docs_inside/

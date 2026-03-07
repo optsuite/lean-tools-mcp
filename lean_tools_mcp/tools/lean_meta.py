@@ -32,18 +32,23 @@ _LEAN_PROJECT_DIR: Path | None = None
 
 
 def _find_lean_project() -> Path | None:
-    """Find the lean/ sub-project directory."""
+    """Find the Lean sub-project directory."""
     global _LEAN_PROJECT_DIR
     if _LEAN_PROJECT_DIR is not None:
         return _LEAN_PROJECT_DIR
 
-    # Look relative to this file's location
-    # src/lean_tools_mcp/tools/lean_meta.py -> lean/
-    pkg_root = Path(__file__).resolve().parent.parent.parent.parent
-    lean_dir = pkg_root / "lean"
-    if lean_dir.is_dir() and (lean_dir / "lakefile.lean").exists():
-        _LEAN_PROJECT_DIR = lean_dir
-        return lean_dir
+    # Search upward so this works for:
+    # - current layout: memory_optimization/lean
+    # - legacy layout: lean/
+    for parent in Path(__file__).resolve().parents:
+        candidates = [
+            parent / "memory_optimization" / "lean",
+            parent / "lean",
+        ]
+        for lean_dir in candidates:
+            if lean_dir.is_dir() and (lean_dir / "lakefile.lean").exists():
+                _LEAN_PROJECT_DIR = lean_dir
+                return lean_dir
     return None
 
 
@@ -115,7 +120,7 @@ async def _run_lean_tool(
             -1,
             "",
             f"Lean tool '{executable}' not found. "
-            f"Run 'lake build {executable}' in the lean/ directory first.",
+            f"Run 'lake build {executable}' in memory_optimization/lean first.",
         )
 
     env = os.environ.copy()

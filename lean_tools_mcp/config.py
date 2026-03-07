@@ -51,7 +51,7 @@ class LSPConfig:
     # Use in-process workers (requires modified lean with Phase 2 changes).
     # Shares Environment across workers, reducing memory by ~80% for Mathlib.
     use_inprocess_workers: bool = False
-    # Directory containing modified lean builds produced by scripts/build_lean.py.
+    # Directory containing modified lean builds produced by memory_optimization/scripts/build_lean.py.
     # Structure: <builds_dir>/<version_tag>/bin/lean
     lean_builds_dir: Path | None = None
 
