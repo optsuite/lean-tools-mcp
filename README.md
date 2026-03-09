@@ -335,4 +335,4 @@ Contact: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT License. See [LICENSE](LICENSE).
