@@ -104,44 +104,29 @@ Each row includes signature + one example.
 | `lean_analyze_deps` | ✅ |  |
 | `lean_export_decls` | ✅ |  |
 
-还有一些其他的 MCP，可以参考 [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp)、[LeanTool](https://github.com/GasStationManager/LeanTool) 和 [ask-math-oracle-mcp](https://github.com/imathwy/ask-math-oracle-mcp)。
+还有一些其他的 MCP，可以参考 [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp) 和 [LeanTool](https://github.com/GasStationManager/LeanTool)。
 
-### Companion MCP: `ask-math-oracle-mcp`
+### Integrated Companion MCP: `ask-math-oracle-mcp`
 
-`ask-math-oracle-mcp` 是一个独立的 `stdio` MCP server，提供单个工具 `ask_math_oracle`，适合在 Lean / 数学证明卡住时调用外部模型（OpenAI / Anthropic / Gemini）做 blocker resolution。它与本仓库现有的 `lean_llm_query` 有一定重叠，但并列安装没有问题。
+`ask-math-oracle-mcp` 不是“外部参考链接”，而是这套安装流程默认一起接入的 companion MCP。`memory_optimization/scripts/one_click_setup.sh` 会默认把它同步到 `~/.codex/vendor/ask-math-oracle-mcp`，并同时写入 Codex / Claude / Cursor 的 MCP 配置（Cursor 仍然需要显式传 `--install-cursor`）。
 
-推荐把它作为 companion server 加到 Codex：
+这个 companion server 提供单个工具 `ask_math_oracle`，适合在 Lean / 数学证明卡住时，请外部模型（OpenAI / Anthropic / Gemini）给出 blocker resolution。
 
-```bash
-git clone https://github.com/imathwy/ask-math-oracle-mcp.git ~/.codex/vendor/ask-math-oracle-mcp
-```
-
-然后在 `~/.codex/config.toml` 里加入：
-
-```toml
-[mcp_servers.ask-math-oracle]
-command = "python3"
-args = ["/Users/<you>/.codex/vendor/ask-math-oracle-mcp/ask_math_oracle_mcp/server.py"]
-startup_timeout_sec = 60
-```
-
-如果已经有 key，也可以把它们显式写到 `env`：
-
-```toml
-[mcp_servers.ask-math-oracle]
-command = "python3"
-args = ["/Users/<you>/.codex/vendor/ask-math-oracle-mcp/ask_math_oracle_mcp/server.py"]
-startup_timeout_sec = 60
-env = { ASK_MATH_ORACLE_OPENAI_API_KEY = "..." }
-```
-
-验证建议：
+如果你不想安装它，可以显式加：
 
 ```bash
-python3 ~/.codex/vendor/ask-math-oracle-mcp/scripts/smoke_test.py
+bash memory_optimization/scripts/one_click_setup.sh --no-install-ask-math-oracle
 ```
 
-说明：不带 key 也可以完成 MCP 握手并做 `dry_run`；但真实调用外部 provider 时，至少需要配置一个 `ASK_MATH_ORACLE_*_API_KEY`。
+如果你想指定它的源码来源或落盘目录，可以用：
+
+```bash
+bash memory_optimization/scripts/one_click_setup.sh \
+  --ask-math-oracle-repo /path/to/ask-math-oracle-mcp \
+  --ask-math-oracle-dir ~/.codex/vendor/ask-math-oracle-mcp
+```
+
+说明：如果安装时环境里存在 `ASK_MATH_ORACLE_*` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` 等变量，脚本会一并写入 companion MCP 的客户端配置；如果没有 key，它也可以正常完成 MCP 握手和 `dry_run`。
 
 
 
@@ -217,24 +202,27 @@ Default behavior of `memory_optimization/scripts/one_click_setup.sh`:
 - Create/update project `~/lean-mcp-v429` with matching `lean-toolchain` and pinned Mathlib revision (`v4.29.0-rc2`).
 - Run `lake update` and `lake exe cache get`.
 - Install this MCP package (`pip install -e ".[sse,dev]"`).
-- Add MCP entries to Codex and Claude config files (Cursor optional).
+- Sync `ask-math-oracle-mcp` into `~/.codex/vendor/ask-math-oracle-mcp` by default.
+- Add MCP entries for both `lean-tools-mcp` and `ask-math-oracle` to Codex and Claude config files (Cursor optional).
 
 Useful options (aligned with script flags):
 
 ```bash
-# Use existing patched lean, skip pip install, and also write Cursor config
+# Use existing patched lean, skip pip install, also write Cursor config,
+# and override the ask-math-oracle source path if needed
 bash memory_optimization/scripts/one_click_setup.sh \
   --project-root /abs/path/to/my-lean-project \
   --lean-path /abs/path/to/patched/lean \
   --no-install-python \
-  --install-cursor
+  --install-cursor \
+  --ask-math-oracle-repo /abs/path/to/ask-math-oracle-mcp
 ```
 
 ### Add MCP in Codex / Claude
 
 Auto mode:
 
-- By default, one-click setup writes:
+- By default, one-click setup writes both `lean-tools-mcp` and `ask-math-oracle`.
 - Codex: `~/.codex/config.toml`
 - Claude: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
@@ -254,6 +242,11 @@ args = [
   "--inprocess",
   "--lean-path", "/abs/path/to/patched/lean"
 ]
+
+[mcp_servers.ask-math-oracle]
+command = "python3"
+args = ["/Users/<you>/.codex/vendor/ask-math-oracle-mcp/ask_math_oracle_mcp/server.py"]
+startup_timeout_sec = 60
 ```
 
 2. Claude (`~/Library/Application Support/Claude/claude_desktop_config.json`)
@@ -267,6 +260,12 @@ args = [
         "--project-root", "/abs/path/to/your/lean-project",
         "--inprocess",
         "--lean-path", "/abs/path/to/patched/lean"
+      ]
+    },
+    "ask-math-oracle": {
+      "command": "python3",
+      "args": [
+        "/Users/<you>/.codex/vendor/ask-math-oracle-mcp/ask_math_oracle_mcp/server.py"
       ]
     }
   }
