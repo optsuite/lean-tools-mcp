@@ -342,12 +342,9 @@ If you use this project in your research, please cite:
   title        = {lean-tools-mcp: MCP Server for Lean 4 with In-Process Memory Optimization},
   year         = {2026},
   version      = {0.1.0},
-  url          = {https://github.com/optsuite/lean-tools-mcp},
-  note         = {Accessed: 2026-03-07}
+  url          = {https://github.com/optsuite/lean-tools-mcp}
 }
 ```
-
-Contact: `wangziyu-edu@stu.pku.edu.cn`, `optsuite@lean-tools-mcp`
 
 ## License
 
