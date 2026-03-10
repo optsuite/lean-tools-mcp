@@ -65,6 +65,7 @@ Each row includes signature + one example.
 | `lean_hammer_premise` | Suggest premises for `simp` or `aesop`. | `{"file_path":"/abs/path/to/Foo.lean","line":102,"column":7,"num_results":20}` |
 | `lean_unified_search` | Merge multiple theorem-search backends in parallel. | `{"query":"Cauchy-Schwarz inequality","num_results":5,"backends":["leansearch","loogle","leanfinder"]}` |
 | `lean_llm_query` | Ask an LLM for Lean/math assistance. | `{"prompt":"Translate this statement into Lean 4:","model":"deepseek-chat","temperature":0.0}` |
+| `ask_math_oracle` | Ask external math-capable models for blocker resolution. | `{"problem":"Need a Lean-friendly proof strategy for Nat.add_comm","provider":"openai","style":"lean-friendly","max_output_tokens":"compact"}` |
 | `lean_havelet_extract` | Extract local `have/let` into top-level declarations. | `{"file_path":"/abs/path/to/Foo.lean","prefix":"Extracted"}` |
 | `lean_analyze_deps` | Analyze theorem-level dependency graph in a file. | `{"file_path":"/abs/path/to/Foo.lean"}` |
 | `lean_export_decls` | Export module declarations to JSONL dataset. | `{"modules":["Mathlib.Topology","Mathlib.Algebra"],"output_path":"/tmp/decls.jsonl"}` |
@@ -101,6 +102,7 @@ Each row includes signature + one example.
 | `lean_hammer_premise` | ✅ | ✅ |
 | `lean_unified_search` | ✅ |  |
 | `lean_llm_query` | ✅ |  |
+| `ask_math_oracle` | ✅ |  |
 | `lean_havelet_extract` | ✅ |  |
 | `lean_analyze_deps` | ✅ |  |
 | `lean_export_decls` | ✅ |  |
