@@ -107,21 +107,21 @@ Each row includes signature + one example.
 | `lean_analyze_deps` | ✅ |  |
 | `lean_export_decls` | ✅ |  |
 
-还有一些其他的 MCP，可以参考 [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp) 和 [LeanTool](https://github.com/GasStationManager/LeanTool)。
+Other Lean-related MCP projects worth checking include [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp) and [LeanTool](https://github.com/GasStationManager/LeanTool).
 
 ### Integrated Companion MCP: `ask-math-oracle-mcp`
 
-`ask-math-oracle-mcp` 不是“外部参考链接”，而是这套安装流程默认一起接入的 companion MCP。`memory_optimization/scripts/one_click_setup.sh` 会默认把它同步到 `~/.codex/vendor/ask-math-oracle-mcp`，并同时写入 Codex / Claude / Cursor 的 MCP 配置（Cursor 仍然需要显式传 `--install-cursor`）。
+`ask-math-oracle-mcp` is not just an external reference; it is a companion MCP that is installed by default as part of this workflow. `memory_optimization/scripts/one_click_setup.sh` syncs it into `~/.codex/vendor/ask-math-oracle-mcp` and writes MCP entries for Codex / Claude / Cursor at the same time (Cursor still requires `--install-cursor`).
 
-这个 companion server 提供单个工具 `ask_math_oracle`，适合在 Lean / 数学证明卡住时，请外部模型（OpenAI / Anthropic / Gemini）给出 blocker resolution。
+This companion server exposes a single tool, `ask_math_oracle`, which is useful when a Lean / mathematics proof gets stuck and you want blocker-resolution help from external models (OpenAI / Anthropic / Gemini).
 
-如果你不想安装它，可以显式加：
+If you do not want to install it, pass:
 
 ```bash
 bash memory_optimization/scripts/one_click_setup.sh --no-install-ask-math-oracle
 ```
 
-如果你想指定它的源码来源或落盘目录，可以用：
+If you want to override its source repository or install directory, use:
 
 ```bash
 bash memory_optimization/scripts/one_click_setup.sh \
@@ -129,7 +129,7 @@ bash memory_optimization/scripts/one_click_setup.sh \
   --ask-math-oracle-dir ~/.codex/vendor/ask-math-oracle-mcp
 ```
 
-说明：如果安装时环境里存在 `ASK_MATH_ORACLE_*` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` 等变量，脚本会一并写入 companion MCP 的客户端配置；如果没有 key，它也可以正常完成 MCP 握手和 `dry_run`。
+Note: if environment variables such as `ASK_MATH_ORACLE_*`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GOOGLE_API_KEY` are present during installation, the script also writes them into the companion MCP client configuration. If no key is available, the MCP handshake and `dry_run` path still work normally.
 
 
 
