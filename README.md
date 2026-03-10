@@ -109,29 +109,6 @@ Each row includes signature + one example.
 
 Other Lean-related MCP projects worth checking include [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp) and [LeanTool](https://github.com/GasStationManager/LeanTool).
 
-### Integrated Companion MCP: `ask-math-oracle-mcp`
-
-`ask-math-oracle-mcp` is not just an external reference; it is a companion MCP that is installed by default as part of this workflow. `memory_optimization/scripts/one_click_setup.sh` syncs it into `~/.codex/vendor/ask-math-oracle-mcp` and writes MCP entries for Codex / Claude / Cursor at the same time (Cursor still requires `--install-cursor`).
-
-This companion server exposes a single tool, `ask_math_oracle`, which is useful when a Lean / mathematics proof gets stuck and you want blocker-resolution help from external models (OpenAI / Anthropic / Gemini).
-
-If you do not want to install it, pass:
-
-```bash
-bash memory_optimization/scripts/one_click_setup.sh --no-install-ask-math-oracle
-```
-
-If you want to override its source repository or install directory, use:
-
-```bash
-bash memory_optimization/scripts/one_click_setup.sh \
-  --ask-math-oracle-repo /path/to/ask-math-oracle-mcp \
-  --ask-math-oracle-dir ~/.codex/vendor/ask-math-oracle-mcp
-```
-
-Note: if environment variables such as `ASK_MATH_ORACLE_*`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GOOGLE_API_KEY` are present during installation, the script also writes them into the companion MCP client configuration. If no key is available, the MCP handshake and `dry_run` path still work normally.
-
-
 
 ## Quick Start
 
