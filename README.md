@@ -21,7 +21,8 @@ Compared with existing Lean MCP servers, this project emphasizes:
 | File / project operations | `lean_file_outline`, `lean_file_contents`, `lean_declaration_file`, `lean_local_search`, `lean_build`, `lean_apply_patch`, `execute-lean`, `execute-lean-persistent`, `cleanup-session` |
 | Code execution / profiling | `lean_run_code`, `lean_multi_attempt`, `lean_profile_proof` |
 | Mathlib search | `lean_leansearch`, `lean_loogle`, `lean_leanfinder`, `lean_state_search`, `lean_hammer_premise`, `lean_unified_search` |
-| LLM / metaprogramming | `lean_llm_query`, `lean_havelet_extract`, `lean_analyze_deps`, `lean_export_decls` |
+| LLM assistance | `lean_llm_query`, `ask_math_oracle` |
+| Lean metaprogramming | `lean_havelet_extract`, `lean_analyze_deps`, `lean_export_decls` |
 
 
 ## Tool Signatures and Examples
