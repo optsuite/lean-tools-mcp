@@ -104,7 +104,44 @@ Each row includes signature + one example.
 | `lean_analyze_deps` | ✅ |  |
 | `lean_export_decls` | ✅ |  |
 
-还有一些其他的 MCP，可以参考 [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp) 和 [LeanTool](https://github.com/GasStationManager/LeanTool)。
+还有一些其他的 MCP，可以参考 [lean-docker-mcp](https://github.com/misanthropic-ai/lean-docker-mcp)、[LeanTool](https://github.com/GasStationManager/LeanTool) 和 [ask-math-oracle-mcp](https://github.com/imathwy/ask-math-oracle-mcp)。
+
+### Companion MCP: `ask-math-oracle-mcp`
+
+`ask-math-oracle-mcp` 是一个独立的 `stdio` MCP server，提供单个工具 `ask_math_oracle`，适合在 Lean / 数学证明卡住时调用外部模型（OpenAI / Anthropic / Gemini）做 blocker resolution。它与本仓库现有的 `lean_llm_query` 有一定重叠，但并列安装没有问题。
+
+推荐把它作为 companion server 加到 Codex：
+
+```bash
+git clone https://github.com/imathwy/ask-math-oracle-mcp.git ~/.codex/vendor/ask-math-oracle-mcp
+```
+
+然后在 `~/.codex/config.toml` 里加入：
+
+```toml
+[mcp_servers.ask-math-oracle]
+command = "python3"
+args = ["/Users/<you>/.codex/vendor/ask-math-oracle-mcp/ask_math_oracle_mcp/server.py"]
+startup_timeout_sec = 60
+```
+
+如果已经有 key，也可以把它们显式写到 `env`：
+
+```toml
+[mcp_servers.ask-math-oracle]
+command = "python3"
+args = ["/Users/<you>/.codex/vendor/ask-math-oracle-mcp/ask_math_oracle_mcp/server.py"]
+startup_timeout_sec = 60
+env = { ASK_MATH_ORACLE_OPENAI_API_KEY = "..." }
+```
+
+验证建议：
+
+```bash
+python3 ~/.codex/vendor/ask-math-oracle-mcp/scripts/smoke_test.py
+```
+
+说明：不带 key 也可以完成 MCP 握手并做 `dry_run`；但真实调用外部 provider 时，至少需要配置一个 `ASK_MATH_ORACLE_*_API_KEY`。
 
 
 
