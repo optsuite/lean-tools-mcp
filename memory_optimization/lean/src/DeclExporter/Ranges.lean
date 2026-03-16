@@ -1,4 +1,4 @@
--- Author: Lean Tools MCP Contributors
+-- Author: Zichen Wang
 -- Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
 -- License: MIT
 
