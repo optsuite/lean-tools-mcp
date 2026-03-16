@@ -21,10 +21,12 @@ class TestToolRegistry:
         "lean_diagnostic_messages",
         "lean_hover_info",
         "lean_completions",
+        "lean_code_actions",
         "lean_file_outline",
         "lean_file_contents",
         "lean_declaration_file",
         "lean_local_search",
+        "lean_build",
         "lean_run_code",
         "lean_multi_attempt",
         "lean_apply_patch",
@@ -66,7 +68,7 @@ class TestToolRegistry:
 
     TOOLS_WITHOUT_FILE_PATH = {
         "lean_run_code", "lean_leansearch", "lean_loogle", "lean_leanfinder",
-        "lean_unified_search", "lean_llm_query", "lean_export_decls",
+        "lean_unified_search", "lean_llm_query", "lean_export_decls", "lean_build",
     }
 
     def test_all_tools_have_file_path(self):
@@ -92,3 +94,23 @@ class TestToolRegistry:
         assert "tactics" in props, "lean_multi_attempt missing 'tactics' property"
         assert "column" in props, "lean_multi_attempt missing 'column' property"
         assert "tactics" in tool.inputSchema["required"]
+
+    def test_code_actions_schema(self):
+        """lean_code_actions must expose range and limiting controls."""
+        tool = next(t for t in TOOLS if t.name == "lean_code_actions")
+        props = tool.inputSchema["properties"]
+        assert "file_path" in props
+        assert "line" in props
+        assert "column" in props
+        assert "end_line" in props
+        assert "end_column" in props
+        assert "max_actions" in props
+
+    def test_build_schema(self):
+        """lean_build should not require file_path and must expose build flags."""
+        tool = next(t for t in TOOLS if t.name == "lean_build")
+        props = tool.inputSchema["properties"]
+        assert "target" in props
+        assert "clean" in props
+        assert "output_lines" in props
+        assert tool.inputSchema["required"] == []

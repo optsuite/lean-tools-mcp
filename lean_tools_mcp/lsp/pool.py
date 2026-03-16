@@ -178,6 +178,24 @@ class LSPPool:
         client = await self.pick_client()
         return await client.get_completions(file_path, line, character)
 
+    async def get_code_actions(
+        self,
+        file_path: Path | str,
+        line: int,
+        column: int,
+        end_line: int | None = None,
+        end_column: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get code actions at a position or range."""
+        client = await self.pick_client()
+        return await client.get_code_actions(
+            file_path=file_path,
+            line=line,
+            character=column,
+            end_line=end_line,
+            end_character=end_column,
+        )
+
     async def get_definition(
         self,
         file_path: Path | str,

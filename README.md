@@ -51,10 +51,12 @@ Each row includes signature + one example.
 | `lean_diagnostic_messages` | Read Lean errors, warnings, and infos. | `{"file_path":"/abs/path/to/Foo.lean","start_line":1,"end_line":200}` |
 | `lean_hover_info` | Get symbol type and documentation. | `{"file_path":"/abs/path/to/Foo.lean","line":18,"column":9}` |
 | `lean_completions` | Return IDE completion candidates. | `{"file_path":"/abs/path/to/Foo.lean","line":34,"column":12,"max_completions":20}` |
+| `lean_code_actions` | Get code actions and quick fixes at a position or range. | `{"file_path":"/abs/path/to/Foo.lean","line":34,"column":12,"max_actions":10}` |
 | `lean_file_outline` | Show imports and declaration outline. | `{"file_path":"/abs/path/to/Foo.lean"}` |
 | `lean_file_contents` | Read file content with optional range. | `{"file_path":"/abs/path/to/Foo.lean","start_line":1,"end_line":80}` |
 | `lean_declaration_file` | Locate the file defining a symbol. | `{"file_path":"/abs/path/to/Foo.lean","symbol":"Nat.add_assoc"}` |
 | `lean_local_search` | Search local declarations by name prefix. | `{"file_path":"/abs/path/to/Foo.lean","query":"simp","limit":10}` |
+| `lean_build` | Run `lake build` for the current project and restart the LSP pool on success. | `{"target":"MyModule","clean":false,"output_lines":80}` |
 | `lean_run_code` | Run a standalone Lean snippet and report diagnostics. | `{"code":"import Mathlib\\n#check Nat.succ"}` |
 | `lean_multi_attempt` | Try multiple tactics on one goal state. | `{"file_path":"/abs/path/to/Foo.lean","line":88,"tactics":["simp","aesop","linarith"]}` |
 | `lean_apply_patch` | Apply targeted edits to a Lean file. | `{"file_path":"/abs/path/to/Foo.lean","start_line":20,"end_line":22,"new_content":"  simp"}` |
@@ -82,19 +84,19 @@ Each row includes signature + one example.
 | `lean_diagnostic_messages` | ✅ | ✅ |
 | `lean_hover_info` | ✅ | ✅ |
 | `lean_completions` | ✅ | ✅ |
+| `lean_code_actions` | ✅ | ✅ |
 | `lean_file_outline` | ✅ | ✅ |
 | `lean_file_contents` | ✅ |  |
 | `lean_declaration_file` | ✅ | ✅ |
 | `lean_local_search` | ✅ | ✅ |
+| `lean_build` | ✅ | ✅ |
 | `lean_run_code` | ✅ | ✅ |
 | `lean_multi_attempt` | ✅ | ✅ |
 | `lean_apply_patch` | ✅ |  |
-| `lean_code_actions` |  | ✅ |
 | `lean_get_widgets` |  | ✅ |
 | `lean_get_widget_source` |  | ✅ |
 | `lean_profile_proof` |  | ✅ |
 | `lean_verify` |  | ✅ |
-| `lean_build` |  | ✅ |
 | `lean_leansearch` | ✅ | ✅ |
 | `lean_loogle` | ✅ | ✅ |
 | `lean_leanfinder` | ✅ | ✅ |

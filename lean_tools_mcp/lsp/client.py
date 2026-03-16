@@ -337,6 +337,64 @@ class LSPClient:
             return result.get("items", [])
         return result
 
+    async def get_code_actions(
+        self,
+        file_path: Path | str,
+        line: int,
+        character: int,
+        end_line: int | None = None,
+        end_character: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get code actions for a position or range."""
+        file_path = Path(file_path).resolve()
+        await self._ensure_file_open(file_path)
+
+        start_line = line - 1
+        start_character = character - 1
+        end_line_lsp = (end_line - 1) if end_line is not None else start_line
+        end_character_lsp = (
+            end_character - 1 if end_character is not None else start_character
+        )
+
+        if (end_line_lsp, end_character_lsp) < (start_line, start_character):
+            end_line_lsp, end_character_lsp = start_line, start_character
+
+        diagnostics = await self.file_manager.wait_for_diagnostics(
+            file_path,
+            timeout=self._file_check_timeout,
+        )
+        action_diagnostics = [
+            diagnostic.to_dict()
+            for diagnostic in diagnostics
+            if _diagnostic_intersects(
+                diagnostic,
+                start_line=start_line,
+                start_character=start_character,
+                end_line=end_line_lsp,
+                end_character=end_character_lsp,
+            )
+        ]
+
+        uri = path_to_uri(file_path)
+        result = await self.transport.send_request(
+            "textDocument/codeAction",
+            {
+                "textDocument": {"uri": uri},
+                "range": {
+                    "start": {"line": start_line, "character": start_character},
+                    "end": {"line": end_line_lsp, "character": end_character_lsp},
+                },
+                "context": {"diagnostics": action_diagnostics},
+            },
+            timeout=self._request_timeout,
+        )
+
+        if result is None:
+            return []
+        if isinstance(result, list):
+            return result
+        return []
+
     async def get_definition(
         self,
         file_path: Path | str,
@@ -534,3 +592,19 @@ class LSPClient:
                 of.is_checked = True
                 of.diagnostics_ready.set()
                 logger.debug("File fully checked: %s (diags=%d)", uri, len(of.diagnostics))
+
+
+def _diagnostic_intersects(
+    diagnostic: Diagnostic,
+    *,
+    start_line: int,
+    start_character: int,
+    end_line: int,
+    end_character: int,
+) -> bool:
+    diag_range = diagnostic.full_range or diagnostic.range
+    diag_start = (diag_range.start.line, diag_range.start.character)
+    diag_end = (diag_range.end.line, diag_range.end.character)
+    target_start = (start_line, start_character)
+    target_end = (end_line, end_character)
+    return diag_start <= target_end and target_start <= diag_end

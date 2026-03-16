@@ -27,6 +27,9 @@ from .clients.rate_limiter import SlidingWindowLimiter, create_default_limiter
 from .config import ServerConfig, load_config
 from .llm.client import LLMClient
 from .lsp.pool import LSPPool
+from .project.manager import LeanProjectManager
+from .tools.build import lean_build
+from .tools.code_actions import lean_code_actions
 from .tools.completions import lean_completions
 from .tools.diagnostics import lean_diagnostic_messages
 from .tools.file_ops import (
@@ -206,6 +209,49 @@ TOOLS: list[Tool] = [
         },
     ),
     Tool(
+        name="lean_code_actions",
+        description=(
+            "Get code actions (quick fixes, refactors, commands) at a position or range.\n\n"
+            "Uses current diagnostics from the same LSP client when available."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Absolute path to the .lean file",
+                },
+                "line": {
+                    "type": "integer",
+                    "description": "Start line number (1-indexed)",
+                    "minimum": 1,
+                },
+                "column": {
+                    "type": "integer",
+                    "description": "Start column number (1-indexed)",
+                    "minimum": 1,
+                },
+                "end_line": {
+                    "type": "integer",
+                    "description": "Optional end line number (1-indexed)",
+                    "minimum": 1,
+                },
+                "end_column": {
+                    "type": "integer",
+                    "description": "Optional end column number (1-indexed)",
+                    "minimum": 1,
+                },
+                "max_actions": {
+                    "type": "integer",
+                    "description": "Maximum number of actions to show (default 20)",
+                    "default": 20,
+                    "minimum": 1,
+                },
+            },
+            "required": ["file_path", "line", "column"],
+        },
+    ),
+    Tool(
         name="lean_file_outline",
         description="Get imports and declarations with type signatures. Token-efficient.",
         inputSchema={
@@ -286,6 +332,34 @@ TOOLS: list[Tool] = [
                 },
             },
             "required": ["file_path", "query"],
+        },
+    ),
+    Tool(
+        name="lean_build",
+        description=(
+            "Run `lake build` for the current project and restart the LSP pool on success.\n\n"
+            "Useful after changing imports, generated files, or Lean metaprogramming helpers."
+        ),
+        inputSchema={
+            "type": "object",
+            "properties": {
+                "target": {
+                    "type": "string",
+                    "description": "Optional build target passed to `lake build`",
+                },
+                "clean": {
+                    "type": "boolean",
+                    "description": "Run `lake clean` before building (default false)",
+                    "default": False,
+                },
+                "output_lines": {
+                    "type": "integer",
+                    "description": "Number of trailing output lines to show (default 80)",
+                    "default": 80,
+                    "minimum": 0,
+                },
+            },
+            "required": [],
         },
     ),
     Tool(
@@ -680,6 +754,11 @@ def create_server(config: ServerConfig) -> tuple[Server, LSPPool, SlidingWindowL
     )
     rate_limiter = create_default_limiter()
     llm_client = LLMClient(config.llm)
+    project_manager = LeanProjectManager(
+        project_root=config.project_root,
+        lsp_pool=lsp_pool,
+        lean_path=config.lsp.lean_path,
+    )
 
     # --- Register tool listing ---
 
@@ -693,7 +772,7 @@ def create_server(config: ServerConfig) -> tuple[Server, LSPPool, SlidingWindowL
     async def call_tool(name: str, arguments: dict[str, Any]) -> list[TextContent]:
         try:
             result = await _dispatch_tool(
-                lsp_pool, rate_limiter, llm_client, name, arguments
+                project_manager, lsp_pool, rate_limiter, llm_client, name, arguments
             )
             return [TextContent(type="text", text=result)]
         except Exception as e:
@@ -704,6 +783,7 @@ def create_server(config: ServerConfig) -> tuple[Server, LSPPool, SlidingWindowL
 
 
 async def _dispatch_tool(
+    project_manager: LeanProjectManager,
     lsp_pool: LSPPool,
     limiter: SlidingWindowLimiter,
     llm_client: LLMClient,
@@ -751,6 +831,16 @@ async def _dispatch_tool(
             column=args["column"],
             max_completions=args.get("max_completions", 32),
         )
+    elif name == "lean_code_actions":
+        return await lean_code_actions(
+            project_manager,
+            file_path=args["file_path"],
+            line=args["line"],
+            column=args["column"],
+            end_line=args.get("end_line"),
+            end_column=args.get("end_column"),
+            max_actions=args.get("max_actions", 20),
+        )
 
     # --- File operation tools ---
     elif name == "lean_file_outline":
@@ -775,6 +865,13 @@ async def _dispatch_tool(
             file_path=args["file_path"],
             query=args["query"],
             limit=args.get("limit", 10),
+        )
+    elif name == "lean_build":
+        return await lean_build(
+            project_manager,
+            target=args.get("target"),
+            clean=args.get("clean", False),
+            output_lines=args.get("output_lines", 80),
         )
 
     # --- Run code / Multi-attempt tools ---
