@@ -15,14 +15,18 @@ Compared with existing Lean MCP servers, this project emphasizes:
 - Memory optimization path for Mathlib-heavy workloads (`--inprocess`).
 - A broader integrated toolset (LSP + search + LLM + Lean metaprogramming + patching).
 
-| Category | Tool union |
+Tools included in the `lean-tools-mcp` project setup:
+
+| Category | Included tools |
 |---|---|
-| Proof state / diagnostics | `lean_goal`, `lean_term_goal`, `lean_diagnostic_messages`, `lean_hover_info`, `lean_completions`, `lean_code_actions`, `lean_get_widgets`, `lean_get_widget_source`, `lean_verify`, `check_lean` |
-| File / project operations | `lean_file_outline`, `lean_file_contents`, `lean_declaration_file`, `lean_local_search`, `lean_build`, `lean_apply_patch`, `execute-lean`, `execute-lean-persistent`, `cleanup-session` |
-| Code execution / profiling | `lean_run_code`, `lean_multi_attempt`, `lean_profile_proof` |
+| Proof state / diagnostics | `lean_goal`, `lean_term_goal`, `lean_diagnostic_messages`, `lean_hover_info`, `lean_completions`, `lean_code_actions` |
+| File / project operations | `lean_file_outline`, `lean_file_contents`, `lean_declaration_file`, `lean_local_search`, `lean_build`, `lean_apply_patch` |
+| Code execution | `lean_run_code`, `lean_multi_attempt` |
 | Mathlib search | `lean_leansearch`, `lean_loogle`, `lean_leanfinder`, `lean_state_search`, `lean_hammer_premise`, `lean_unified_search` |
 | LLM assistance | `lean_llm_query`, `ask_math_oracle` |
 | Lean metaprogramming | `lean_havelet_extract`, `lean_analyze_deps`, `lean_export_decls` |
+
+`ask_math_oracle` is included as a project-integrated companion MCP tool installed by the one-click setup.
 
 
 ## Tool Signatures and Examples
