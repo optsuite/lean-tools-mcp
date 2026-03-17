@@ -340,7 +340,7 @@ We hope that the package is useful for your application. If you have any bug rep
 
 ## Citation
 
-If you use this project in your research, please cite:
+If you find this project useful in your research, please consider citing the following work:
 
 ```bibtex
 @software{wang2026lean_tools_mcp,
