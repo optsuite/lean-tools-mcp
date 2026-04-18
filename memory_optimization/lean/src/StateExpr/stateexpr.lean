@@ -2,15 +2,15 @@
 -- Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
 -- License: MIT
 
--- 我们需要导入 Lean 和 Json 库
+-- Import the Lean and Json libraries we need.
 import Lean
 import Lean.Data.Json
 
--- 导入我们需要的所有元编程工具
+-- Open all metaprogramming utilities used below.
 open Lean Meta Elab Tactic Json
 
 -- ==================================================================
---   第 1 步：定义可序列化 (ToJson) 的数据结构
+--   Step 1: define serializable (`ToJson`) data structures
 -- ==================================================================
 
 structure StateExprTree where
@@ -43,7 +43,7 @@ structure FullStateInfo where
 
 
 -- ==================================================================
---   第 2 步：重构 `buildExprTree` (返回 StateExprTree)
+--   Step 2: refactor `buildExprTree` to return `StateExprTree`
 -- ==================================================================
 
 partial def buildExprTree (e : Expr) : MetaM StateExprTree := do
@@ -78,7 +78,7 @@ partial def buildExprTree (e : Expr) : MetaM StateExprTree := do
 
 
 -- ==================================================================
---   第 3 步：创建 `buildStateInfo` (返回 FullStateInfo)
+--   Step 3: create `buildStateInfo` returning `FullStateInfo`
 -- ==================================================================
 
 def buildStateInfo : TacticM FullStateInfo := do
@@ -124,7 +124,7 @@ def buildStateInfo : TacticM FullStateInfo := do
 
 
 -- ==================================================================
---   第 4 步：创建新的策略和 InfoView 打印机
+--   Step 4: create the new tactic and InfoView printer
 -- ==================================================================
 
 partial def logTree (tree : StateExprTree) (indent : String) : TacticM Unit := do
@@ -164,7 +164,7 @@ def logStateInfo (info : FullStateInfo) : TacticM Unit := do
 
 
 -- ----------------------------------------------------------------
---   新的策略语法 (已修复)
+--   New tactic syntax (fixed)
 -- ----------------------------------------------------------------
 
 syntax (name := showFullStateTree) "showFullStateTree" (str)? : tactic
@@ -174,13 +174,13 @@ def elabShowFullStateTree : Tactic := fun stx =>
   withMainContext do
     let stateInfo ← buildStateInfo
 
-    -- stx[1] 是可选的 (str)? 部分
+    -- `stx[1]` is the optional `(str)?` argument.
     match stx[1].getOptional? with
     | some strLitSyntax =>
-      -- ✅✅✅ 修复：使用 `isStrLit?` 来解包 `Syntax` ✅✅✅
+      -- Use `isStrLit?` to unpack the `Syntax` node.
       match strLitSyntax.isStrLit? with
       | some pathString =>
-          -- 成功！ pathString 现在是一个 `String`
+          -- Success: `pathString` is now an ordinary `String`.
           let path := pathString
 
           if let some dir := System.FilePath.parent path then
@@ -190,17 +190,17 @@ def elabShowFullStateTree : Tactic := fun stx =>
           logInfo m!"State tree saved to: {path}"
 
       | none =>
-          -- 用户提供了参数，但它不是一个字符串字面量
+          -- The user provided an argument, but it is not a string literal.
           logError m!"Tactic argument must be a string literal (e.g., \"path/file.json\")."
 
     | none =>
-      -- --- 分支 2：没有参数，打印到 InfoView ---
+      -- Branch 2: no argument was provided, so print to InfoView.
       logStateInfo stateInfo
 
 example (a b c x : Nat) (h : x = (a + b) - c) : True := by
   let y := a + b
 
-  -- 测试 InfoView 打印
+  -- Test InfoView output.
   showFullStateTree
 
   trivial
@@ -208,7 +208,7 @@ example (a b c x : Nat) (h : x = (a + b) - c) : True := by
 example (a b c x : Nat) (h : x = (a + b) - c) : True := by
   let y := a + b
 
-  -- 测试 JSON 保存
+  -- Test JSON export.
   showFullStateTree "temp/state.json"
 
   trivial

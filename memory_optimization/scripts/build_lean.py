@@ -29,7 +29,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 PATCHES_DIR = PROJECT_ROOT / "patches"
 
-SUPPORTED_PATCH_VERSIONS = ["v4.27", "v4.28", "v4.29"]
+SUPPORTED_PATCH_VERSIONS = ["v4.27", "v4.27-dynamic-fix", "v4.28", "v4.29"]
 
 PATCH_FILE_MAP = {
     "Watchdog.lean": "src/Lean/Server/Watchdog.lean",
@@ -190,13 +190,28 @@ def main() -> None:
         action="store_true",
         help="Keep the cloned source tree after building",
     )
+    parser.add_argument(
+        "--patch-version",
+        type=str,
+        default=None,
+        help="Specific patch version to use (e.g. v4.27-dynamic-fix). If not specified, auto-detected from --version",
+    )
     args = parser.parse_args()
 
     version_tag = args.version
     if not version_tag.startswith("v"):
         version_tag = f"v{version_tag}"
 
-    patch_version = find_patch_version(version_tag)
+    # Determine patch version
+    if args.patch_version:
+        patch_version = args.patch_version
+        if patch_version not in SUPPORTED_PATCH_VERSIONS:
+            print(f"Error: unsupported patch version '{patch_version}'", file=sys.stderr)
+            print(f"Supported: {', '.join(SUPPORTED_PATCH_VERSIONS)}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        patch_version = find_patch_version(version_tag)
+
     print(f"Lean version:  {version_tag}")
     print(f"Patch version: {patch_version}")
     print(f"Output dir:    {args.output}")

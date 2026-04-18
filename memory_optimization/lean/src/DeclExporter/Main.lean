@@ -4,12 +4,13 @@
 /-
   DeclExporter/Main.lean  (Lean 4.24)
   ------------------------------------
-  * 流式写 JSONL，显示进度；
-  * 仅导出 **模块名前缀** 命中的常量（例如传 "Mathlib" 则导出所有 Mathlib.*）；
-  * 断点续跑：
-      --resume      从已存在 JSONL 读出 {name} 去重并以追加模式写入
-      --append      仅追加写，不读旧记录
-      --progress=N  每 N 条打印一次进度（默认 2000）
+  * Stream JSONL output and display progress.
+  * Export only constants whose **module prefix** matches
+    (for example, passing "Mathlib" exports every `Mathlib.*` declaration).
+  * Resume support:
+      --resume      read existing `{name}` values from JSONL, deduplicate, and append
+      --append      append only, without reading old records
+      --progress=N  print progress every N items (default 2000)
 -/
 import Lean
 import Lean.Data.Json
@@ -27,14 +28,14 @@ open DeclExporter.Filters
 open DeclExporter.Export
 open DeclExporter.Inspect
 
-/-- 简单 flags -/
+/-- Simple CLI flags. -/
 structure CliFlags where
   append        : Bool := false
   resume        : Bool := false
   progressEvery : Nat  := 2000
 deriving Inhabited
 
-/-- 解析 `--append --resume --progress=NUM`，返回 (flags, 其余参数)。 -/
+/-- Parse `--append --resume --progress=NUM`, returning `(flags, remainingArgs)`. -/
 private partial def parseFlags (args : List String) : CliFlags × List String :=
   let rec go (fs : CliFlags) (restRev : List String) : List String → (CliFlags × List String)
   | [] => (fs, restRev.reverse)
@@ -56,24 +57,24 @@ private partial def parseFlags (args : List String) : CliFlags × List String :=
       go fs (a :: restRev) as
   go ({} : CliFlags) [] args
 
-/-- 模块前缀匹配：传 "Mathlib" 则匹配 "Mathlib.*"。 -/
+/-- Module prefix matching: passing `"Mathlib"` matches `Mathlib.*`. -/
 @[inline] def startsWithMod (modn : String) (mods : List String) : Bool :=
   mods.any (fun m => modn.startsWith m)
 
-/-- 取名字的最后一段：`A.B.C` → `C`，`foo._simp_1_7` → `_simp_1_7` -/
+/-- Take the final segment of a name: `A.B.C` → `C`, `foo._simp_1_7` → `_simp_1_7`. -/
 @[inline] def tailName (n : Name) : Name :=
   match n with
   | .str _ s => Name.str .anonymous s
   | .num _ k => Name.num .anonymous k
   | .anonymous => .anonymous
 
-/-- 读取已有 JSONL 中的 `"name"` 集合（用于 --resume 去重）。 -/
+/-- Read the set of `"name"` values from an existing JSONL file for `--resume` deduplication. -/
 def readNameSetFromJsonl (path : System.FilePath) : IO (HashSet String) := do
   if !(← path.pathExists) then
     return HashSet.emptyWithCapacity (α := String)
   let content ← IO.FS.readFile path
   let mut acc : HashSet String := HashSet.emptyWithCapacity (α := String)
-  -- JSONL 每行一个 JSON；我们用 splitOn "\n" 即可
+  -- JSONL stores one JSON object per line, so splitting on "\n" is sufficient.
   for ln in content.splitOn "\n" do
     let s := ln.trim
     if s.isEmpty then
@@ -100,10 +101,10 @@ def main (argv : List String) : IO UInt32 := do
     IO.eprintln "No modules provided. Example: lake exe decl_exporter out.jsonl Mathlib"
     return 1
 
-  -- 初始化搜索路径
+  -- Initialize the search path.
   initSearchPath (← findSysroot)
 
-  -- 导入模块以构建 Environment
+  -- Import modules to build the environment.
   let imports : Array Import :=
     (mods.map (fun m => { module := DeclExporter.stringToName m : Import })).toArray
   let opts : Options := {}
@@ -111,10 +112,10 @@ def main (argv : List String) : IO UInt32 := do
   let env ← importModules imports opts
   IO.eprintln "[decl_exporter] import done."
 
-  -- 过滤器（按需改）
+  -- Export filter configuration (adjust as needed).
   let flt : ExportFilter := { excludeInternal := true, excludeSorry := false }
 
-  -- 先筛一遍目标常量（仅模块前缀匹配）
+  -- Pre-filter target constants using the module-prefix criterion only.
   let constList := env.constants.toList
   let targetNames : Array Name :=
     constList.foldl (init := (#[] : Array Name)) (fun acc (n, _ci) =>
@@ -124,7 +125,7 @@ def main (argv : List String) : IO UInt32 := do
   let total := targetNames.size
   IO.eprintln s!"[decl_exporter] {total} decls to scan (by module prefix filter)."
 
-  -- --resume：读旧 JSONL 的 name 集合，去重
+  -- For `--resume`, load the existing name set and skip duplicates.
   let outPath := System.FilePath.mk out
   let existing : HashSet String ←
     if flags.resume then
@@ -134,10 +135,10 @@ def main (argv : List String) : IO UInt32 := do
     else
       pure (HashSet.emptyWithCapacity (α := String))
 
-  -- 选择写入模式
+  -- Choose the output file mode.
   let mode : IO.FS.Mode := if flags.resume || flags.append then .append else .write
 
-  -- 流式写 JSONL
+  -- Stream JSONL output.
   IO.FS.withFile outPath mode fun h => do
     let mut scanned  : Nat := 0
     let mut exported : Nat := 0
@@ -157,7 +158,7 @@ def main (argv : List String) : IO UInt32 := do
 
           let shortName := tailName n
 
-          -- 过滤，如果最后的字段以"_"开头就过滤
+          -- Filter out declarations whose final name component starts with "_".
           if allow shortName kind modn hasS flt then
           -- if allow n kind modn hasS flt then
             let rec ← constToRec env opts ci none

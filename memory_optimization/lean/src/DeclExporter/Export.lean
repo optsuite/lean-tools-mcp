@@ -4,10 +4,10 @@
 /-
   DeclExporter/Export.lean
   -------------------------
-  将 Inspect/Deps/Pretty/Ranges/Filters 组装起来，生成 DeclRec 数组；
-  并提供 JSONL 写出函数（每行一个 JSON 对象）。
-  使用真正 pretty（Lean.PrettyPrinter.ppExpr），并正确构造
-  Core.Context / Core.State / Meta.Context / Meta.State。
+  Compose Inspect/Deps/Pretty/Ranges/Filters to produce `DeclRec` arrays.
+  Also provides JSONL writers (one JSON object per line).
+  Uses real pretty-printing (`Lean.PrettyPrinter.ppExpr`) and constructs
+  `Core.Context` / `Core.State` / `Meta.Context` / `Meta.State` correctly.
 -/
 import Lean
 import Lean.Data.Json
@@ -31,14 +31,14 @@ open DeclExporter.Filters
 
 namespace DeclExporter.Export
 
-/-- 在给定 `env` 与 `opts` 下对 `Expr` 做 pretty-print 并得到 `String`。 -/
+/-- Pretty-print an `Expr` to `String` under the given `env` and `opts`. -/
 private def ppExprStrIO (env : Environment) (opts : Options) (e : Expr) : IO String := do
-  -- Core.Context：需提供 fileName / fileMap / options
+  -- `Core.Context` must provide `fileName`, `fileMap`, and `options`.
   let coreCtx : Core.Context :=
     { options  := opts
       fileName := "<decl-extractor>"
       fileMap  := FileMap.ofString "" }
-  -- Core.State：显式构造（Lean 没有 Inhabited Core.State）
+  -- Build `Core.State` explicitly because Lean does not provide `Inhabited Core.State`.
   let coreSt  : Core.State :=
     { env            := env
       nextMacroScope := 1
@@ -48,15 +48,15 @@ private def ppExprStrIO (env : Environment) (opts : Options) (e : Expr) : IO Str
       messages       := default
       infoState      := default
       snapshotTasks  := #[] }
-  -- Meta 上下文/状态
+  -- Meta context/state.
   let mctx : Meta.Context := {}
   let mst  : Meta.State   := {}
-  -- 真正 pretty：ppExpr : MetaM Format
+  -- True pretty-printing: `ppExpr : MetaM Format`.
   let (fmt, _, _) ← (Lean.PrettyPrinter.ppExpr e).toIO coreCtx coreSt mctx mst
-  -- 用 opts 中的宽度渲染为 String
+  -- Render to `String` using the width settings from `opts`.
   pure (Std.Format.pretty' fmt opts)
 
-/-- 将单个 ConstantInfo 转为 DeclRec（产出 pretty/raw 两套字符串）。 -/
+/-- Convert one `ConstantInfo` into a `DeclRec`, producing both pretty and raw strings. -/
 def constToRec (env : Environment) (opts : Options)
     (ci : ConstantInfo) (libVersion? : Option String := none) : IO DeclRec := do
   let n      := ci.name
@@ -67,20 +67,20 @@ def constToRec (env : Environment) (opts : Options)
   let v?     := valueExpr? ci
   let hasP   := hasValue ci
 
-  -- sorry 判定
+  -- Detect whether the declaration contains `sorry`.
   let hasS : Bool := ty.hasSorry || (match v? with | some v => v.hasSorry | none => false)
 
-  -- 依赖（区分 type / value）
+  -- Dependencies, separated into type/value buckets.
   let depsTy := constDeps ty
   let depsVl := match v? with
                 | some v => constDeps v
                 | none   => #[]
 
-  -- 打印：pretty（MetaM）与 raw（稳定）
+  -- Rendering: pretty (`MetaM`) and raw (stable).
   let typePretty ← ppExprStrIO env opts ty
   let typeRaw    := rawExprStr ty
 
-  -- 分支里用 `pure`，不要用 `return`，否则后续语句变成 unreachable
+  -- Use `pure` inside the branches rather than `return`, otherwise later code becomes unreachable.
   let valuePretty? ← match v? with
     | some v =>
         let s ← ppExprStrIO env opts v
@@ -88,12 +88,12 @@ def constToRec (env : Environment) (opts : Options)
     | none   =>
         pure none
 
-  -- 这行现在是可达的
+  -- This line is now reachable.
   let valueRaw := v?.map rawExprStr
 
 
 
-  -- 文件与位置（安全降级：pos = none）
+  -- File and position, with safe fallback (`pos = none`).
   let (file?, pos?) ← fileAndPos? env n m
 
   -- let tacticProof? : Option String := none
@@ -104,7 +104,7 @@ def constToRec (env : Environment) (opts : Options)
         | none   => pure none
     | _ => pure none
 
-  -- 版本信息
+  -- Version metadata.
   let leanVer := currentLeanVersion
 
   pure {
@@ -127,7 +127,7 @@ def constToRec (env : Environment) (opts : Options)
     lib_version  := libVersion?
   }
 
-/-- 遍历环境生成 DeclRec（应用过滤器） -/
+/-- Traverse the environment and produce `DeclRec`s, applying the export filter. -/
 def exportAll (env : Environment) (opts : Options)
     (flt : ExportFilter := {}) (libVersion? : Option String := none) : IO (Array DeclRec) := do
   let mut out : Array DeclRec := #[]
@@ -143,7 +143,7 @@ def exportAll (env : Environment) (opts : Options)
       out := out.push rec
   pure out
 
-/-- 将 DeclRec 数组写为 JSONL -/
+/-- Write a `DeclRec` array as JSONL. -/
 def writeJsonl (path : System.FilePath) (recs : Array DeclRec) : IO Unit := do
   IO.FS.withFile path .write fun h => do
     for r in recs do

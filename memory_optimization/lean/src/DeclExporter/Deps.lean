@@ -4,12 +4,13 @@
 /-
   DeclExporter/Deps.lean
   -----------------------
-  职责：
-  * 从 Expr 中抽取“常量依赖”（Expr.const 的 Name 集合），不依赖不存在的 fold API。
-  * 区分 deps_type / deps_value，外层组装时分别调用。
-  说明：
-  * 使用显式递归遍历 Expr 的所有构造，收集 .const n _。
-  * 仅依赖 Lean 与 Std 的稳定接口，兼容 Lean 4.24.0。
+  Responsibilities:
+  * Extract constant dependencies from `Expr` values (the `Name`s in `Expr.const`)
+    without relying on unavailable fold APIs.
+  * Distinguish `deps_type` from `deps_value`, so callers can compute them separately.
+  Notes:
+  * Uses explicit recursive traversal over all `Expr` constructors to collect `.const n _`.
+  * Depends only on stable Lean and Std interfaces, so it remains compatible with Lean 4.24.0.
 -/
 import Lean
 import Std.Data.HashSet
@@ -21,7 +22,7 @@ open DeclExporter
 
 namespace DeclExporter.Deps
 
-/-- 显式递归遍历 `Expr`，收集出现的常量名（`Expr.const`）。 -/
+/-- Explicitly recurse through an `Expr` and collect all constant names (`Expr.const`). -/
 partial def collectConstNames (e : Expr) (acc : HashSet Name := {}) : HashSet Name :=
   match e with
   | .const n _      => acc.insert n
@@ -40,14 +41,14 @@ partial def collectConstNames (e : Expr) (acc : HashSet Name := {}) : HashSet Na
       collectConstNames b acc
   | .mdata _ b      => collectConstNames b acc
   | .proj _ _ b     => collectConstNames b acc
-  -- 其余不含子表达式或与常量无关的构造，直接返回累积集
+  -- The remaining constructors contain no subexpressions or no relevant constants.
   | .sort _         => acc
   | .lit _          => acc
   | .bvar _         => acc
   | .fvar _         => acc
   | .mvar _         => acc
 
-/-- Expr → Array String（常量名去重、转 String）。 -/
+/-- Convert an `Expr` to an `Array String` of deduplicated constant names. -/
 def constDeps (e : Expr) : Array String :=
   (collectConstNames e {}).toArray.map nameToString
 

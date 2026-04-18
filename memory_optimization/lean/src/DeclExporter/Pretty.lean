@@ -4,10 +4,10 @@
 /-
   DeclExporter/Pretty.lean
   -------------------------
-  职责：
-  * 统一“表达式字符串化”策略：
-    - pretty：使用 Meta.ppExpr 得到 Format，再用 Std.Format.pretty 渲染为 String
-    - raw：   使用 toString（结构稳定、便于后处理）
+  Responsibilities:
+  * Provide a uniform expression-to-string strategy:
+    - pretty: use `Meta.ppExpr` to obtain `Format`, then render it via `Std.Format.pretty`
+    - raw:    use `toString` for a more stable structural representation
 -/
 import Lean
 import DeclExporter.Core
@@ -17,12 +17,12 @@ open DeclExporter
 
 namespace DeclExporter.Pretty
 
-/-- pretty 打印（在 MetaM 下运行）。`ppExpr` 返回 `Format`，再用 `Std.Format.pretty` 转 `String`。 -/
+/-- Pretty-print under `MetaM`. `ppExpr` returns `Format`, then `Std.Format.pretty` renders it to `String`. -/
 def ppExprStr (e : Expr) : MetaM String := do
   let fmt ← ppExpr e        -- fmt : Format
   pure (Std.Format.pretty fmt)
 
-/-- 原始打印（非 pretty），更适合结构比对与 hash。 -/
+/-- Raw printing (not pretty), better suited for structural comparison and hashing. -/
 @[inline] def rawExprStr (e : Expr) : String :=
   toString e
 

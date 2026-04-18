@@ -20,6 +20,9 @@ lean_lib DefinitionTool where
 /-- StateExpr: tactic that shows full expression tree. -/
 lean_lib StateExpr where
 
+/-- PatchTool: syntax-aware code patching. -/
+lean_lib PatchTool where
+
 /-- CLI: lake exe havelet_generator <input.lean> <output.lean> <Prefix> -/
 lean_exe havelet_generator where
   root := `HaveletGenerator.Main
@@ -33,4 +36,9 @@ lean_exe decl_exporter where
 /-- CLI: lake exe definition_tool <input.lean> [output.json] -/
 lean_exe definition_tool where
   root := `DefinitionTool.Main
+  supportInterpreter := true
+
+/-- CLI: lake exe patch_tool <mode> <file> [options] -/
+lean_exe patch_tool where
+  root := `PatchTool.Main
   supportInterpreter := true

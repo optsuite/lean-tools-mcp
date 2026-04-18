@@ -4,13 +4,15 @@
 /-
   DeclExporter/Core.lean
   -----------------------
-  职责：
-  * 定义导出记录的统一数据结构（稳定 JSON Schema）；
-  * 提供与之相关的轻量工具函数（如 kindOf、版本字符串、字符串与 Name 互转）。
-  注意：
-  * 仅放“数据结构 + 轻量工具”，不依赖 Meta，便于在任意环境复用。
-  * 已补全 ConstantInfo 的所有构造子（包含 quotInfo）。
-  * Lean 版本字符串使用 `Lean.versionString`（Lean 4.24.0 可用）。
+  Responsibilities:
+  * Define the unified export record shape (a stable JSON schema).
+  * Provide related lightweight helpers such as `kindOf`, version strings, and
+    string/`Name` conversion.
+  Notes:
+  * Keep only data structures and lightweight helpers here, with no Meta dependency,
+    so the module can be reused in any environment.
+  * All `ConstantInfo` constructors are covered, including `quotInfo`.
+  * Lean version strings come from `Lean.versionString`, which is available in Lean 4.24.0.
 -/
 import Lean
 import Lean.Data.Json
@@ -19,7 +21,7 @@ open Lean
 
 namespace DeclExporter
 
-/-- 位置范围（行列号）。若无法获取可为 none。 -/
+/-- Source range in line/column form. Use `none` when unavailable. -/
 structure RangePos where
   startLine : Nat
   startCol  : Nat
@@ -28,40 +30,42 @@ structure RangePos where
 deriving ToJson
 
 /--
-  顶层声明导出的统一记录。字段尽量稳定，以便外部（Rust/OLAP）长期消费。
-  可按需扩展字段，但建议在末尾追加，避免破坏下游兼容。
+  Unified export record for top-level declarations. Fields are kept as stable as
+  possible for long-term external consumption (for example by Rust or OLAP tooling).
+  New fields can be added when needed, but they should preferably be appended at
+  the end to reduce downstream breakage.
 -/
 structure DeclRec where
-  name         : String             -- 完全限定名
+  name         : String             -- Fully qualified name.
   kind         : String             -- theorem/definition/axiom/opaque/inductive/ctor/recursor/quot
-  module       : String             -- 所属模块名
-  levelParams  : Array String       -- 宇称参数
-  type_pretty  : String             -- 美化打印（人类可读）
-  type_raw     : String             -- 原始打印（结构更稳）
-  value_pretty : Option String      -- 值/证明项（pretty，若无则 none）
-  value_raw    : Option String      -- 值/证明项原始打印（无则为 none）
-  tactic_proof : Option String      -- tactic 脚本原文
-  has_proof    : Bool               -- 是否存在值/证明项
-  has_sorry    : Bool               -- 类型或值中是否含 sorry
-  deps_type    : Array String       -- 类型中的常量依赖
-  deps_value   : Array String       -- 值/证明项中的常量依赖
-  file         : Option String      -- 源文件路径（可缺省）
-  pos          : Option RangePos    -- 行列号（可缺省）
-  lean_version : String             -- 采集时 Lean 版本号
-  lib_version  : Option String      -- 采集目标库版本（可选：mathlib commit/hash 或自库版本）
+  module       : String             -- Owning module name.
+  levelParams  : Array String       -- Universe parameters.
+  type_pretty  : String             -- Pretty-printed type, intended for humans.
+  type_raw     : String             -- Raw type rendering, more stable structurally.
+  value_pretty : Option String      -- Pretty-printed value/proof term, if present.
+  value_raw    : Option String      -- Raw value/proof rendering, if present.
+  tactic_proof : Option String      -- Original tactic script text.
+  has_proof    : Bool               -- Whether a value/proof term exists.
+  has_sorry    : Bool               -- Whether the type or value contains `sorry`.
+  deps_type    : Array String       -- Constant dependencies appearing in the type.
+  deps_value   : Array String       -- Constant dependencies appearing in the value/proof.
+  file         : Option String      -- Source file path, if available.
+  pos          : Option RangePos    -- Line/column range, if available.
+  lean_version : String             -- Lean version used during export.
+  lib_version  : Option String      -- Exported library version, if available.
 deriving ToJson
 
-/-- 统一把 `Name` 打印成 `String`。 -/
+/-- Convert `Name` uniformly to `String`. -/
 @[inline] def nameToString (n : Name) : String :=
   toString n
 
-/-- 将形如 `"A.B.C"` 的模块名转为 `Name`。 -/
+/-- Convert a module name like `"A.B.C"` into `Name`. -/
 def stringToName (s : String) : Name :=
   (s.split (· = '.')).foldl (fun acc seg => Name.str acc seg) Name.anonymous
 
 /--
-  将 `ConstantInfo` 归类为稳定字符串。
-  注意补全了 `quotInfo`（Lean 内置商类型相关常量）。
+  Classify `ConstantInfo` into a stable string representation.
+  This includes `quotInfo` for Lean's built-in quotient-related constants.
 -/
 def kindOf (ci : ConstantInfo) : String :=
   match ci with
@@ -74,7 +78,7 @@ def kindOf (ci : ConstantInfo) : String :=
   | .ctorInfo     _ => "ctor"
   | .recInfo      _ => "recursor"
 
-/-- 返回当前运行的 Lean 版本字符串（Lean 4.24.0 下可用）。 -/
+/-- Return the current Lean version string (available in Lean 4.24.0). -/
 def currentLeanVersion : String :=
   Lean.versionString
 

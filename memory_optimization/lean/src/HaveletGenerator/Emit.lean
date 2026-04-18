@@ -2,11 +2,12 @@
 -- License: MIT
 
 /-
-havelet-generator (lake exe 版本，避开 .ofFVar(Id)Info 以及 ti.expr? / ti.lctx? 差异)
+havelet-generator (`lake exe` version, avoiding `.ofFVar(Id)Info` and
+`ti.expr?` / `ti.lctx?` compatibility differences)
 ==================================================================================
 
-用 `lake exe` 提取某 Lean 源文件中的所有局部 `have/let`，
-并在指定路径生成一个独立 `.lean` 文件，包含闭合后的顶层 `def/theorem`。
+Use `lake exe` to extract all local `have/let` bindings from a Lean source file
+and generate a standalone `.lean` file containing closed top-level `def/theorem`s.
 -/
 
 import Lean
@@ -15,7 +16,7 @@ open Lean Meta Elab
 
 namespace HaveLet
 
-/-- 清洗名字 -/
+/-- Sanitize a generated name. -/
 private def sanitize (s : String) : String :=
   let ok (c : Char) := c.isAlphanum || c == '_' || c == '·'
   let cleaned := s.foldl (fun acc c => acc.push (if ok c then c else '_')) ""
@@ -31,7 +32,7 @@ structure LocalBinding where
   ctx      : ContextInfo
   parent?  : Option Name
 
-/-- 收集 `LocalDecl` 中的 `have/let` -/
+/-- Collect `have/let` bindings from `LocalDecl`s. -/
 private structure CollectState where
   acc : Array LocalBinding := #[]
 
@@ -90,7 +91,7 @@ private def dedupBindings (items : Array LocalBinding) : Array LocalBinding :=
 def collectLocals (trees : Array InfoTree) : Array LocalBinding :=
   dedupBindings <| (trees.foldl (fun st t => collectFromTree t none st) {}).acc
 
-/-- 将一条 `let/have` 封装为顶层 `def/theorem` 源码字符串。 -/
+/-- Turn one `let/have` binding into the source text of a top-level `def/theorem`. -/
 def buildTopLevelDeclSrc
   (pref : String) (idx : Nat) (bind : LocalBinding) :
   IO (String × String) := do
@@ -132,10 +133,10 @@ def buildTopLevelDeclSrc
   let src := s!"{kw} {full} : {tyStr} :=\n  {valStr}\n"
   pure (full, src)
 
-/-- 头尾 -/
+/-- Footer for the generated file. -/
 def makeFooter : String := "\nend Extracted\n"
 
-/-- 组合整份文件 -/
+/-- Assemble the complete generated file. -/
 def buildFile (trees : Array InfoTree) (pref : String) (headerStr : String) : IO String := do
   let items := collectLocals trees
   let mut idx := 0

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Author: Zichen Wang
-# Contact: wangziyu-edu@stu.pku.edu.cn; optsuite@lean-tools-mcp
+# Contact: zichenwang25@stu.pku.edu.cn; optsuite@lean-tools-mcp
 # License: MIT
 
 set -euo pipefail
