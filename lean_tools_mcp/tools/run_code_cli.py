@@ -46,7 +46,8 @@ async def lean_run_code_cli(
     ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     temp_name = f"run_code_{ts}.lean"
 
-    temp_dir = project_root / ".lake" / "lean_tools_mcp"
+    project_path = Path(project_root)
+    temp_dir = project_path / ".lake" / "lean_tools_mcp"
     temp_dir.mkdir(parents=True, exist_ok=True)
     temp_path = temp_dir / temp_name
     temp_path.write_text(code, encoding="utf-8")
@@ -57,7 +58,7 @@ async def lean_run_code_cli(
         # Use lake env lean to get proper LEAN_PATH with built dependencies
         proc = await asyncio.create_subprocess_exec(
             "lake", "env", "lean", str(temp_path),
-            cwd=project_root,
+            cwd=str(project_path),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
